@@ -27,6 +27,7 @@ import { selectors, actions, MeetingState, MeetingActions, VideoState, MeetingWh
 import { selectors as chatSelectors } from '../../components/Chat/Chat.state';
 import Chat from '../../components/Chat/Chat';
 import ChatService from '../../services/ChatService';
+import { hasPicture } from '../../components/Video/AudioOnly';
 import Page from '../../components/Page/Page';
 import Menu, { MenuPosition } from '../../components/Menu/Menu';
 import ActiveVideo from '../../components/ActiveVideo/ActiveVideo';
@@ -149,9 +150,10 @@ class Meeting extends Component<MeetingProps> {
 		return Boolean(this.props.id);
 	}
 
+	/** Whether a picture is being sent: false for a voice-only meeting, so the camera button shows "off" */
 	get canVideoMute () {
 		if (!this.userVideo) return false;
-		return !this.userVideo.streamMuted.video;
+		return hasPicture(this.userVideo);
 	}
 
 	get canAudioMute () {

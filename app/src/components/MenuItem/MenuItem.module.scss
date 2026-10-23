@@ -12,6 +12,12 @@
     &.active {
       opacity: 1;
     }
+
+    // a switch that is off (muted microphone, no camera) is shown strongly, in the dark colour of the app
+    &.off {
+      opacity: 1;
+      color: var(--ion-color-dark);
+    }
   }
 
   .badge {
