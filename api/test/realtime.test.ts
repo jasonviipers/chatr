@@ -622,3 +622,65 @@ describe('chat channel', () => {
     expect(accepted).toBeLessThan(30);
   });
 });
+
+describe('media state channel', () => {
+  async function participant(port: number, peerId: string, token: string) {
+    const peer = await connect(
+      port,
+      `/peer/peerjs?key=peerjs&id=${peerId}&token=${token}`,
+    );
+    await peer.next((m) => m['type'] === 'OPEN');
+    const socket = await connect(port, '/socket');
+    socket.send({ t: 'hi', sid: `${peerId}-socket`, peerId, token });
+    await socket.next((m) => m['t'] === 'hi');
+    socket.send({ t: 'sub', c: '/mediaState/meeting1' });
+    await socket.next((m) => m['t'] === 'ok');
+    return socket;
+  }
+
+  it('tells everybody who switched the camera or the microphone, naming the sender itself', async () => {
+    const { port } = await startGateway();
+    const alice = await participant(port, 'aliceAAA7', 'alice-token-7');
+    const bob = await participant(port, 'bobBBBBB7', 'bob-token-7');
+
+    alice.send({
+      t: 'pub',
+      c: '/mediaState/meeting1',
+      i: 1,
+      d: { video: true, audio: false, from: 'bobBBBBB7' },
+    });
+    const seen = await bob.next((m) => m['t'] === 'm');
+    expect(seen['d']).toEqual({
+      from: 'aliceAAA7',
+      video: true,
+      audio: false,
+    });
+  });
+
+  it('refuses unidentified senders and malformed states', async () => {
+    const { port } = await startGateway();
+    const alice = await participant(port, 'aliceAAA8', 'alice-token-8');
+    const stranger = await connect(port, '/socket');
+    stranger.send({ t: 'hi', sid: 'stranger-socket-8' });
+    await stranger.next((m) => m['t'] === 'hi');
+    stranger.send({
+      t: 'pub',
+      c: '/mediaState/meeting1',
+      i: 1,
+      d: { video: true, audio: true },
+    });
+    expect((await stranger.next((m) => m['t'] === 'err'))['code']).toBe(
+      'forbidden',
+    );
+
+    alice.send({
+      t: 'pub',
+      c: '/mediaState/meeting1',
+      i: 1,
+      d: { video: 'yes' },
+    });
+    expect(
+      (await alice.next((m) => m['t'] === 'err' && m['i'] === 1))['code'],
+    ).toBe('bad_message');
+  });
+});

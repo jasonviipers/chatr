@@ -47,7 +47,7 @@ interface Switch {
 /** The two switches: the icon shows what is happening now, with a slash when it is off. `active` means on. */
 export const switches: Partial<Record<MenuItemName, Switch>> = {
 	audio: { on: micOutline, off: micOffOutline, labelOn: 'Mute microphone', labelOff: 'Unmute microphone' },
-	video: { on: videocamOutline, off: videocamOffOutline, labelOn: 'Turn camera off', labelOff: 'Camera off' },
+	video: { on: videocamOutline, off: videocamOffOutline, labelOn: 'Turn camera off', labelOff: 'Turn camera on' },
 };
 
 const labels: Record<MenuItemName, string> = {

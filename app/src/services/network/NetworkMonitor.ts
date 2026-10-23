@@ -3,6 +3,8 @@ import { PROFILES, QualityController, summarizeStats } from './QualityController
 import type { QualityLevel, QualityProfile } from './QualityController';
 
 const SAMPLE_INTERVAL_MS = 2_000;
+/** The most a camera picture may use per call. */
+const CAMERA_MAX_BITRATE = 600_000;
 /** When a call drops, wait this long for the browser to heal it by itself before forcing an ICE restart. */
 const DISCONNECTED_GRACE_MS = 3_000;
 /** Delays before each further restart attempt if the call still has not come back. */
@@ -58,7 +60,8 @@ export async function applyProfile(pc: RTCPeerConnection, profile: QualityProfil
       } else if (track.kind === 'video') {
         encoding.active = profile.screenActive;
         if (profile.screenActive) {
-          encoding.maxBitrate = profile.screenMaxBitrate;
+          // a camera (contentHint 'motion') needs far less than a shared screen: the uplink is shared by everybody in the mesh
+          encoding.maxBitrate = track.contentHint === 'motion' ? Math.min(profile.screenMaxBitrate, CAMERA_MAX_BITRATE) : profile.screenMaxBitrate;
           encoding.scaleResolutionDownBy = profile.screenScaleDown;
           encoding.maxFramerate = profile.screenMaxFps;
         }

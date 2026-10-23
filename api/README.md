@@ -89,6 +89,14 @@ time itself, so a participant cannot write in somebody else's name. Text is limi
 characters and the bidirectional overrides that make text read backwards are removed, and each connection may send a
 burst of ten messages and then one a second. Messages are not stored: they live as long as the meeting, in memory.
 
+## Camera and microphone state
+
+Pictures and sound travel in the calls themselves, but "this person switched their camera off" or "muted
+themselves" is not visible in a call (a muted track still arrives, as silence or black). Every participant therefore
+announces their own state on the `/mediaState/<meetingId>` channel: just two booleans, `video` and `audio`. As with
+the chat, the server adds who it is from the sender's verified identity, so nobody can show somebody else as muted
+or on camera, and each connection is limited to a burst of 20 announcements, then 4 a second.
+
 ## Calls on a bad network
 
 The server side: acknowledged publishes with ids (no duplicates when a client retries), replay of what a client missed

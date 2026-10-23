@@ -83,7 +83,9 @@ scripts; the API itself runs on Node 26+. The Docker images install Bun themselv
 ``` cd api && bun install && bun run dev
 cd app && bun install && bun run dev ```
 
-Meeting features: voice calls, text chat, whiteboard and screen sharing. A proposal for noise suppression of the
+Meeting features: voice calls, an optional camera (off until you switch it on), text chat, whiteboard and screen
+sharing. The native apps need the camera and microphone permissions declared in their projects (`NSCameraUsageDescription`
+and `NSMicrophoneUsageDescription` on iOS, `CAMERA` and `RECORD_AUDIO` on Android). A proposal for noise suppression of the
 microphone is in [docs/voice-cancellation.md](docs/voice-cancellation.md).
 
 Development is plain HTTP (`http://localhost:3000` for the app, `http://localhost:8080` for the API, no certificate

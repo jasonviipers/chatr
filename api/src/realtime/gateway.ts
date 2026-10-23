@@ -5,6 +5,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { forwardedFor } from '../lib/http.ts';
 import { TokenBucket } from '../lib/rate-limit.ts';
 import { buildChatPayload } from './chat.ts';
+import { buildMediaStatePayload } from './media-state.ts';
 import type { Connection } from './pubsub.ts';
 import { PubSub } from './pubsub.ts';
 import {
@@ -28,6 +29,7 @@ const CHANNEL_KINDS = new Set([
   'whiteboardCanvasClear',
   'iceRestart',
   'chat',
+  'mediaState',
 ]);
 const CHANNEL_PATTERN = /^\/([A-Za-z]{1,32})\/([A-Za-z0-9_-]{1,64})$/;
 const SESSION_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
@@ -72,6 +74,7 @@ export function channelAllowed(
       return action === 'subscribe' ? conn.peerId === id : conn.peerId !== null;
     // anyone in the meeting may read the chat, but only identified participants may write to it
     case 'chat':
+    case 'mediaState': // who has the camera or the microphone on
       return action === 'subscribe' || conn.peerId !== null;
     default:
       return true;
@@ -167,6 +170,7 @@ export function createGateway(options: GatewayOptions): Gateway {
     const bucket = new TokenBucket(200, 100);
     // chatting is human speed: a burst of ten messages, then one a second
     const chatBucket = new TokenBucket(10, 1);
+    const stateBucket = new TokenBucket(20, 4);
     let violations = 0;
 
     const reply = (value: object): void => send(ws, JSON.stringify(value));
@@ -280,6 +284,11 @@ export function createGateway(options: GatewayOptions): Gateway {
             const chat = buildChatPayload(conn.peerId, message['d']);
             if (chat === null) return refuse('bad_message');
             payload = chat;
+          } else if (channel.kind === 'mediaState') {
+            if (!stateBucket.take()) return refuse('rate_limited');
+            const state = buildMediaStatePayload(conn.peerId, message['d']);
+            if (state === null) return refuse('bad_message');
+            payload = state;
           } else {
             payload = message['d'] ?? null;
           }

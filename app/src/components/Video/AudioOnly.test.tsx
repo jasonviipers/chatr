@@ -51,6 +51,14 @@ describe('hasPicture', () => {
     expect(hasPicture(tile(new FakeStream([{ readyState: 'live' }])))).toBe(true);
   });
 
+  it('a shared screen is a picture even though the camera is off', () => {
+    expect(hasPicture(tile(new FakeStream([{ readyState: 'live' }]), { kind: 'screen', streamMuted: { video: true, audio: false } }))).toBe(true);
+  });
+
+  it('a live video line is not a picture until the camera is announced as on', () => {
+    expect(hasPicture(tile(new FakeStream([{ readyState: 'live' }]), { streamMuted: { video: true, audio: false } }))).toBe(false);
+  });
+
   it('is false for an ended track and when the app switched the video off', () => {
     expect(hasPicture(tile(new FakeStream([{ readyState: 'ended' }])))).toBe(false);
     expect(hasPicture(tile(new FakeStream([{ readyState: 'live' }]), { streamMuted: { video: true, audio: false } }))).toBe(false);

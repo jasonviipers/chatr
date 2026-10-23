@@ -26,7 +26,7 @@ describe('microphone and camera buttons', () => {
     show({ name: 'audio', active: false });
     expect(screen.getByLabelText('Unmute microphone')).toBeTruthy();
     show({ name: 'video', active: false });
-    expect(screen.getByLabelText('Camera off')).toBeTruthy();
+    expect(screen.getByLabelText('Turn camera on')).toBeTruthy();
   });
 
   it('shows an off switch at full strength, not faded like an unavailable action', () => {

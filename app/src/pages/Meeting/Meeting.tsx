@@ -27,6 +27,9 @@ import { selectors, actions, MeetingState, MeetingActions, VideoState, MeetingWh
 import { selectors as chatSelectors } from '../../components/Chat/Chat.state';
 import Chat from '../../components/Chat/Chat';
 import ChatService from '../../services/ChatService';
+import MediaStateService from '../../services/MediaStateService';
+import { camera } from '../../services/CameraService';
+import { callStream, pictureOf, settleCall } from '../../services/OutgoingMedia';
 import { hasPicture } from '../../components/Video/AudioOnly';
 import Page from '../../components/Page/Page';
 import Menu, { MenuPosition } from '../../components/Menu/Menu';
@@ -49,6 +52,7 @@ class Meeting extends Component<MeetingProps> {
 	authService: AuthService;
 	notificationService: NotificationService;
 	chatService: ChatService;
+	mediaStateService: MediaStateService;
 	whiteboardDrawingService: WhiteboardDrawingService;
 	whiteboardCanvasService: WhiteboardCanvasService;
 	screenCaptureService: ScreenCaptureService;
@@ -67,6 +71,8 @@ class Meeting extends Component<MeetingProps> {
 		this.authService = new AuthService();
 		this.notificationService = new NotificationService();
 		this.chatService = new ChatService();
+		this.mediaStateService = new MediaStateService();
+		camera.onEnded(() => this.turnCameraOff()); // unplugged, or the permission was withdrawn
 		this.whiteboardDrawingService = new WhiteboardDrawingService();
 		this.whiteboardCanvasService = new WhiteboardCanvasService();
 		this.screenCaptureService = new ScreenCaptureService();
@@ -186,6 +192,8 @@ class Meeting extends Component<MeetingProps> {
 	switchUserStreamToMedia () {
 		this.mediaService.getStream(this.props.history, () => {
 			const mediaStream = this.meetingService.getMediaStream();
+			const cameraTrack = camera.currentTrack;
+			if (cameraTrack) mediaStream.addTrack(cameraTrack); // back from sharing the screen: the camera, if it is on
 			this.videoService.replaceUserStream(mediaStream, 'media');
 			this.rtpSenderService.replaceStream(mediaStream);
 			const screenStream = this.meetingService.getScreenStream();
@@ -200,6 +208,9 @@ class Meeting extends Component<MeetingProps> {
 			this.rtpSenderService.replaceStream(screenStream);
 			this.handleStreamStop();
 			const mediaStream = this.meetingService.getMediaStream();
+			// the camera is not part of what is stopped here: it comes back when the sharing ends
+			const cameraTrack = camera.currentTrack;
+			if (cameraTrack) mediaStream.removeTrack(cameraTrack);
 			this.streamTrackService.stop(mediaStream);
 		});
 	}
@@ -233,17 +244,44 @@ class Meeting extends Component<MeetingProps> {
 		});
 	}
 
-	handleMenuVideoClick () {
-		if (this.userVideo) {
-			const enabled = this.mediaService.toggleVideoMute(this.userVideo.stream);
-			this.props.replaceVideoStreamMutedVideo(this.props.connectionId, !enabled);
+	async handleMenuVideoClick () {
+		if (!this.userVideo) return;
+		if (this.userVideo.kind === 'screen') {
+			AlertService.push('Stop sharing your screen to use the camera');
+			return;
 		}
+		if (camera.isOn) this.turnCameraOff();
+		else await this.turnCameraOn();
+	}
+
+	async turnCameraOn () {
+		try {
+			const track = await camera.turnOn();
+			const userVideo = this.userVideo;
+			if (!userVideo || userVideo.kind === 'screen') return camera.turnOff(); // the screen was shared meanwhile
+			userVideo.stream.addTrack(track); // the picture of yourself, and what the calls to come will carry
+			this.props.replaceVideoStreamMutedVideo(this.props.connectionId, false);
+			this.rtpSenderService.setVideoTrack(track);
+			this.mediaStateService.publishOwn();
+		} catch {
+			AlertService.push('Camera not available');
+		}
+	}
+
+	turnCameraOff () {
+		const track = camera.currentTrack;
+		if (track) this.userVideo?.stream.removeTrack(track);
+		camera.turnOff();
+		this.props.replaceVideoStreamMutedVideo(this.props.connectionId, true);
+		if (this.userVideo?.kind !== 'screen') this.rtpSenderService.setVideoTrack(null);
+		this.mediaStateService.publishOwn();
 	}
 
 	handleMenuAudioClick () {
 		if (this.userVideo) {
 			const enabled = this.mediaService.toggleAudioMute(this.userVideo.stream);
 			this.props.replaceVideoStreamMutedAudio(this.props.connectionId, !enabled);
+			this.mediaStateService.publishOwn();
 		}
 	}
 
@@ -297,6 +335,10 @@ class Meeting extends Component<MeetingProps> {
 		});
 	}
 
+	handleRemoteMediaState (meetingId: string) {
+		socket.mediaState.subscribe(meetingId, state => this.mediaStateService.receive(state));
+	}
+
 	handleRemoteChat (meetingId: string) {
 		socket.chat.subscribe(meetingId, message => this.chatService.receive(message));
 	}
@@ -337,6 +379,7 @@ class Meeting extends Component<MeetingProps> {
 				this.peerService.call(connectionId, localStream, call => {
 					this.meetingService.pushCall(call);
 					this.handleCallStreaming(call);
+					this.settleVideo(call);
 				}, this.outgoingStream(localStream));
 			}
 		});
@@ -421,6 +464,7 @@ class Meeting extends Component<MeetingProps> {
 		const { id } = this.props;
 		socket.raiseHand.unsubscribe(id);
 		socket.chat.unsubscribe(id);
+		socket.mediaState.unsubscribe(id);
 		socket.conferenceCall.unsubscribe(id);
 		socket.rtpTrackReplaced.unsubscribe(id);
 		socket.remoteDisconnect.unsubscribe(id);
@@ -449,6 +493,8 @@ class Meeting extends Component<MeetingProps> {
 		this.meetingService.resetMeeting();
 		this.socketUnsubscribe();
 		this.chatService.reset();
+		camera.turnOff();
+		this.mediaStateService.clear();
 		this.peerService.disconnect();
 		this.authService.resetType();
 		this.props.replaceWhiteboardEnabled(false);
@@ -469,6 +515,7 @@ class Meeting extends Component<MeetingProps> {
 			this.videoService.createMediaVideo(remoteConnectionId, remoteStream, remoteVideo => {
 				this.videoService.pushVideo(remoteVideo);
 			});
+			this.mediaStateService.publishOwn(); // they may have joined after we switched the camera or the microphone
 		});
 		// Someone whose connection died without a goodbye would otherwise stay on screen as a frozen picture
 		this.peerService.onCallEnded(call, () => {
@@ -486,7 +533,8 @@ class Meeting extends Component<MeetingProps> {
 		this.peerService.onReceiveCall(call => {
 			this.meetingService.pushCall(call);
 			const { peer: connectionId } = call;
-			this.peerService.answerCall(call, localStream);
+			this.peerService.answerCall(call, callStream(this.userVideo?.stream ?? localStream));
+			this.settleVideo(call);
 			this.whiteboardDrawingSync(connectionId);
 			socket.conferenceCall.publish(meetingId, connectionId);
 			this.notificationService.notifyHost(connectionId);
@@ -494,9 +542,19 @@ class Meeting extends Component<MeetingProps> {
 		});
 	}
 
-	/** What we send to others right now: the camera, or the screen while it is being shared. */
+	/** What we send to others right now: our voice and, if there is one, our camera or the screen being shared. */
 	outgoingStream (fallback: MediaStream) {
-		return () => this.userVideo?.stream ?? fallback;
+		return () => callStream(this.userVideo?.stream ?? fallback);
+	}
+
+	/** The picture that should be on the video line of a call now (usually none, then nothing is sent). */
+	desiredPicture () {
+		return this.userVideo ? pictureOf(this.userVideo.stream) : null;
+	}
+
+	/** Once a call is negotiated, take the placeholder off its video line. */
+	settleVideo (call: MediaConnection) {
+		if (call.peerConnection) settleCall(call.peerConnection, () => this.desiredPicture());
 	}
 
 	joinMeeting (meetingId: string, localConnectionId: string, localStream: MediaStream) {
@@ -504,6 +562,7 @@ class Meeting extends Component<MeetingProps> {
 			this.peerService.call(meetingId, localStream, call => {
 				this.meetingService.pushCall(call);
 				this.handleCallStreaming(call);
+				this.settleVideo(call);
 			}, this.outgoingStream(localStream));
 		}
 	}
@@ -522,6 +581,7 @@ class Meeting extends Component<MeetingProps> {
 				if (meetingId) {
 					this.handleRemoteRaiseHand(meetingId);
 					this.handleRemoteChat(meetingId);
+					this.handleRemoteMediaState(meetingId);
 					this.handleRemoteMemberRemove(meetingId);
 					this.handleDisconnect();
 					this.mediaService.getStream(history, localStream => {

@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import { VideoState } from '../../pages/Meeting/Meeting.state'
 import Video from '../Video/Video'
 import AudioOnly from '../Video/AudioOnly'
+import MuteBadge from '../Video/MuteBadge'
 import RaiseHand from '../RaiseHand/RaiseHand'
 import styles from './VideoBlock.module.scss'
 
@@ -38,6 +39,7 @@ export default class VideoBlock extends Component<VideoBlockProps> {
         <div className={styles.content}>
           <Video video={this.props.video} />
           <AudioOnly video={this.props.video} />
+          <MuteBadge muted={this.props.video.streamMuted.audio} who={this.props.video.muted ? 'You' : 'Participant'} />
           <RaiseHand visibility={this.props.video.raiseHand} />
         </div>
       </div>

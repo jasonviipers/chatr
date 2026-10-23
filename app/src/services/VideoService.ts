@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import store from '../store';
 import MeetingService from './MeetingService';
 import StreamTrackService from './StreamTrackService';
+import MediaStateService from './MediaStateService';
 import MeetingRepository from '../repositories/MeetingRepository';
 import {
   actions as meetingActions,
@@ -38,6 +39,7 @@ export default class VideoService {
     callback: createVideoCallback,
   ): void {
     const muted = this.meetingService.isUserMeeting(connectionId);
+    const announced = new MediaStateService().stateOf(connectionId);
     const video = {
       id: connectionId,
       stream,
@@ -46,9 +48,10 @@ export default class VideoService {
       memberRemove: this.meetingService.canMemberRemove(connectionId),
       active: this.meetingService.isHostMeeting(connectionId),
       muted,
+      // nobody has a camera on until they say so; what was announced before this tile existed is applied
       streamMuted: {
-        video: false,
-        audio: false,
+        video: !announced?.video,
+        audio: announced ? !announced.audio : false,
       },
       renderId: nanoid(),
     };

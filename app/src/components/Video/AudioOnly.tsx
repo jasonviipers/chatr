@@ -9,9 +9,12 @@ interface AudioOnlyProps {
   video: VideoState;
 }
 
-/** Whether the tile has a picture to show: a live video track (a shared screen) that the app has not switched off. */
-export function hasPicture(video: Pick<VideoState, 'stream' | 'streamMuted'>): boolean {
-  if (video.streamMuted.video) return false;
+/**
+ * Whether the tile has a picture to show: a live video track, and the camera announced as on (or a shared screen,
+ * which is always worth showing). A line without a picture on it still has a track, so the track alone proves nothing.
+ */
+export function hasPicture(video: Pick<VideoState, 'stream' | 'streamMuted' | 'kind'>): boolean {
+  if (video.kind !== 'screen' && video.streamMuted.video) return false;
   return video.stream.getVideoTracks().some((track) => track.readyState === 'live');
 }
 
