@@ -1,0 +1,85 @@
+services:
+  nginx:
+    depends_on:
+      - api
+      - app
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: ./nginx
+    ports:
+      - "3000:80"
+
+  # Hono + Better Auth + Drizzle/SQLite API, realtime gateway and WebRTC signalling (see api/README or api/.env.example)
+  api:
+    build:
+      dockerfile: .Dockerfile
+      context: ./api
+    restart: always
+    environment:
+      PORT: "8080"
+      TLS: "off" # nginx is in front of it
+      TRUST_PROXY: "true" # nginx sets X-Forwarded-For
+      WEB_APP_HOST: chatrs.fr
+      # signs the session tokens; put it in a `.env` file next to this one:  AUTH_SECRET=<48+ random characters>
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in a .env file next to .docker-compose.yml}
+      DATABASE_PATH: /app/data/chatr.sqlite
+      STUN_URLS: stun:stun.l.google.com:19302
+      # calls over carriers / strict NATs / corporate firewalls need a relay: enable the coturn service below
+      TURN_URLS: ${TURN_URLS:-}
+      TURN_SECRET: ${TURN_SECRET:-}
+    volumes:
+      - api-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  app:
+    stdin_open: true
+    depends_on:
+      - api
+    environment:
+      REACT_APP_HOST: chatrs.fr
+      REACT_APP_NAME: chatrs
+      REACT_APP_TAGLINE: Let’s start a meeting with your team
+      REACT_APP_API_HOST: chatrs.fr/api
+    build:
+      dockerfile: .Dockerfile
+      context: ./app
+    volumes:
+      - /app/node_modules
+      - ./app:/app
+
+  # TURN relay for participants that cannot reach each other directly (optional):
+  #   docker compose -f .docker-compose.yml --profile turn up -d
+  # with TURN_URLS=turn:chatrs.fr:3478?transport=udp,turn:chatrs.fr:3478?transport=tcp and the same TURN_SECRET as the API.
+  coturn:
+    profiles: ["turn"]
+    image: coturn/coturn:latest
+    restart: always
+    network_mode: host # relaying needs the real network interfaces
+    command:
+      - -n
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET:?set TURN_SECRET to run coturn}
+      - --realm=chatrs.fr
+      - --fingerprint
+      - --no-cli
+      - --no-multicast-peers
+      - --min-port=49160
+      - --max-port=49200
+
+  # Read-only look into the database:  docker compose -f .docker-compose.yml --profile tools run --rm sqlite3
+  sqlite3:
+    profiles: ["tools"]
+    image: keinos/sqlite3:latest
+    stdin_open: true
+    tty: true
+    command: ["sqlite3", "-readonly", "/data/chatr.sqlite"]
+    volumes:
+      - api-data:/data
+
+volumes:
+  api-data:

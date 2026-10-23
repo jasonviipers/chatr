@@ -1,0 +1,20 @@
+# dependencies and build output
+node_modules/
+build/
+dist/
+
+# secrets and local configuration (api/.env, TLS keys, databases)
+.env
+.env.*
+!.env.example
+!.env.exemple
+*.pem
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.claude/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log

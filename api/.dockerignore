@@ -1,0 +1,11 @@
+node_modules
+build
+data
+ssl
+test
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
