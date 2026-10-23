@@ -1,0 +1,25 @@
+// Sizes follow the tile (the container is .content of VideoBlock), so the same cover suits a small
+// thumbnail and the full-screen picture.
+.audioOnly {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2cqmin;
+  background: radial-gradient(circle at 50% 38%, var(--ion-color-dark-tint) 0%, var(--ion-color-dark) 70%);
+  color: var(--ion-color-medium);
+  pointer-events: none;
+  user-select: none;
+
+  .icon {
+    font-size: 34cqmin;
+    opacity: 0.85;
+  }
+
+  .label {
+    font-size: max(11px, 5.5cqmin);
+    letter-spacing: 0.02em;
+  }
+}

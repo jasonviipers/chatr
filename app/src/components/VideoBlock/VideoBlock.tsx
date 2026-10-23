@@ -2,6 +2,7 @@ import { isPlatform } from '@ionic/react'
 import React, { Component } from 'react'
 import { VideoState } from '../../pages/Meeting/Meeting.state'
 import Video from '../Video/Video'
+import AudioOnly from '../Video/AudioOnly'
 import RaiseHand from '../RaiseHand/RaiseHand'
 import styles from './VideoBlock.module.scss'
 
@@ -36,6 +37,7 @@ export default class VideoBlock extends Component<VideoBlockProps> {
         onClick={this.handleClick}>
         <div className={styles.content}>
           <Video video={this.props.video} />
+          <AudioOnly video={this.props.video} />
           <RaiseHand visibility={this.props.video.raiseHand} />
         </div>
       </div>
