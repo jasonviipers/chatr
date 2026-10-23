@@ -3,3 +3,4 @@ data
 drizzle
 node_modules
 ssl
+*.md

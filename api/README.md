@@ -9,6 +9,7 @@ One small Node process that serves everything the apps need:
 | Auth | [Better Auth](https://better-auth.com) (username + bearer plugins). Roles: `admin` and `host` |
 | Realtime | `/socket`: WebSocket gateway for the meeting events (acknowledged publishes, replay after a reconnect, heartbeat) |
 | Signalling | `/peer`: PeerJS-compatible WebRTC signalling (the browser keeps using `peerjs`) |
+| Chat | `/chat/<meetingId>` channel on the socket: text messages for people who cannot or do not want to use the microphone |
 | ICE | `/ice-servers`: STUN list plus short-lived TURN credentials |
 
 Calls stay peer to peer (WebRTC mesh): the server only introduces people, so one small VPS handles
@@ -78,6 +79,15 @@ certificate locally; it refuses to start when the files are missing.
 - The privacy policy HTML is sanitised on write. A participant's identity is stamped by the server on realtime
   messages that need it, and only the host can remove a member.
 - Never set `TRUST_PROXY=true` when clients can reach the API directly: they could then pick their own IP.
+
+## Chat
+
+Messages travel over the same realtime socket as the other meeting events, so they get its delivery guarantees:
+acknowledged publishes, replay of what a reconnecting client missed, no duplicates. The server accepts a message only
+from an identified participant, takes just the text and a client message id from it, and adds the sender and the
+time itself, so a participant cannot write in somebody else's name. Text is limited to 1000 characters, control
+characters and the bidirectional overrides that make text read backwards are removed, and each connection may send a
+burst of ten messages and then one a second. Messages are not stored: they live as long as the meeting, in memory.
 
 ## Calls on a bad network
 

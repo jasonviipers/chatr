@@ -83,6 +83,9 @@ scripts; the API itself runs on Node 26+. The Docker images install Bun themselv
 ``` cd api && bun install && bun run dev
 cd app && bun install && bun run dev ```
 
+Meeting features: voice calls, text chat, whiteboard and screen sharing. A proposal for noise suppression of the
+microphone is in [docs/voice-cancellation.md](docs/voice-cancellation.md).
+
 Development is plain HTTP (`http://localhost:3000` for the app, `http://localhost:8080` for the API, no certificate
 needed); production is HTTPS (see [api/README.md](api/README.md)).
 
