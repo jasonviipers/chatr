@@ -1,3 +1,5 @@
+import type { ChatPayload } from '../../components/Chat/Chat.state';
+import type { PublishCallbacks } from '../../services/RealtimeSocket';
 import SocketService from '../../services/SocketService';
 import {
   MeetingWhiteboardDrawingsState,
@@ -165,6 +167,27 @@ export default {
     },
     publish(meetingId: string, drawing: MeetingWhiteboardDrawingState) {
       SocketService.publish(this.channel(meetingId), drawing);
+    },
+  },
+
+  chat: {
+    channel(meetingId: string) {
+      return `/chat/${meetingId}`;
+    },
+    subscribe(meetingId: string, callback: (message: ChatPayload) => void) {
+      SocketService.subscribe(this.channel(meetingId), (message: ChatPayload) =>
+        callback(message),
+      );
+    },
+    unsubscribe(meetingId: string) {
+      SocketService.unsubscribe(this.channel(meetingId));
+    },
+    publish(
+      meetingId: string,
+      message: { id: string; text: string },
+      callbacks?: PublishCallbacks,
+    ) {
+      SocketService.publish(this.channel(meetingId), message, callbacks);
     },
   },
 

@@ -498,3 +498,127 @@ describe('renegotiation channel', () => {
     });
   });
 });
+
+describe('chat channel', () => {
+  async function participant(
+    port: number,
+    peerId: string,
+    token: string,
+  ): Promise<Client> {
+    const peer = await connect(
+      port,
+      `/peer/peerjs?key=peerjs&id=${peerId}&token=${token}`,
+    );
+    await peer.next((m) => m['type'] === 'OPEN');
+    const socket = await connect(port, '/socket');
+    socket.send({ t: 'hi', sid: `${peerId}-socket`, peerId, token });
+    await socket.next((m) => m['t'] === 'hi');
+    socket.send({ t: 'sub', c: '/chat/meeting1' });
+    await socket.next((m) => m['t'] === 'ok');
+    return socket;
+  }
+
+  it('delivers to everybody in the meeting with the sender and time stamped by the server', async () => {
+    const { port } = await startGateway();
+    const alice = await participant(port, 'aliceAAA1', 'alice-token-1');
+    const bob = await participant(port, 'bobBBBBB1', 'bob-token-1');
+
+    // the sender tries to pass itself off as somebody else
+    alice.send({
+      t: 'pub',
+      c: '/chat/meeting1',
+      i: 1,
+      d: {
+        id: 'msg_000001',
+        text: ' Hello everyone ',
+        from: 'bobBBBBB1',
+        at: 5,
+      },
+    });
+    expect(await alice.next((m) => m['t'] === 'a')).toEqual({ t: 'a', i: 1 });
+
+    const received = await bob.next((m) => m['t'] === 'm');
+    const data = received['d'] as Record<string, unknown>;
+    expect(data).toMatchObject({
+      id: 'msg_000001',
+      text: 'Hello everyone',
+      from: 'aliceAAA1',
+    });
+    expect(data['at']).not.toBe(5);
+    expect(typeof data['at']).toBe('number');
+    // the sender gets its own message back too (that is how it learns the server time)
+    expect(await alice.next((m) => m['t'] === 'm')).toBeTruthy();
+  });
+
+  it('lets anyone read, but only an identified participant write', async () => {
+    const { port } = await startGateway();
+    const alice = await participant(port, 'aliceAAA2', 'alice-token-2');
+    const stranger = await connect(port, '/socket');
+    stranger.send({ t: 'hi', sid: 'stranger-socket-1' });
+    await stranger.next((m) => m['t'] === 'hi');
+    stranger.send({ t: 'sub', c: '/chat/meeting1' });
+    await stranger.next((m) => m['t'] === 'ok');
+
+    stranger.send({
+      t: 'pub',
+      c: '/chat/meeting1',
+      i: 1,
+      d: { id: 'msg_000002', text: 'spam' },
+    });
+    const refused = await stranger.next((m) => m['code'] === 'forbidden');
+    expect(refused['i']).toBe(1);
+
+    alice.send({
+      t: 'pub',
+      c: '/chat/meeting1',
+      i: 1,
+      d: { id: 'msg_000003', text: 'real message' },
+    });
+    const seen = await stranger.next((m) => m['t'] === 'm');
+    expect((seen['d'] as Record<string, unknown>)['text']).toBe('real message');
+  });
+
+  it('refuses malformed and oversized messages without dropping the connection', async () => {
+    const { port } = await startGateway();
+    const alice = await participant(port, 'aliceAAA3', 'alice-token-3');
+    alice.send({
+      t: 'pub',
+      c: '/chat/meeting1',
+      i: 1,
+      d: { id: 'x', text: 'hi' },
+    });
+    expect(
+      (await alice.next((m) => m['i'] === 1 && m['t'] === 'err'))['code'],
+    ).toBe('bad_message');
+    alice.send({
+      t: 'pub',
+      c: '/chat/meeting1',
+      i: 2,
+      d: { id: 'msg_000004', text: 'y'.repeat(1001) },
+    });
+    expect(
+      (await alice.next((m) => m['i'] === 2 && m['t'] === 'err'))['code'],
+    ).toBe('bad_message');
+    alice.send({ t: 'ping', n: 1 });
+    expect(await alice.next((m) => m['t'] === 'pong')).toBeTruthy();
+  });
+
+  it('slows a flood down: a burst is fine, a hundred messages in a blink are not', async () => {
+    const { port } = await startGateway();
+    const alice = await participant(port, 'aliceAAA4', 'alice-token-4');
+    for (let i = 1; i <= 30; i++)
+      alice.send({
+        t: 'pub',
+        c: '/chat/meeting1',
+        i,
+        d: {
+          id: `msg_flood${String(i).padStart(3, '0')}`,
+          text: `message ${i}`,
+        },
+      });
+    await alice.next((m) => m['code'] === 'rate_limited');
+    const accepted = alice.messages.filter((m) => m['t'] === 'a').length;
+    expect(accepted).toBeGreaterThanOrEqual(10);
+    expect(accepted).toBeLessThan(30);
+  });
+});

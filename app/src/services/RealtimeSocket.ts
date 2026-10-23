@@ -35,6 +35,12 @@ export interface RealtimeSocketOptions {
   onGap?: (channel: string) => void;
 }
 
+/** Told when the server took a publish (the user can see 'sent') or refused it (the user can see 'not sent'). */
+export interface PublishCallbacks {
+  onAck?: () => void;
+  onRejected?: (code: string) => void;
+}
+
 interface Subscription {
   handler: (data: any) => void;
   lastSeq: number;
@@ -67,6 +73,7 @@ export class RealtimeSocket {
   private identity: { peerId: string; token: string } | null = null;
   private readonly subscriptions = new Map<string, Subscription>();
   private readonly outbox = new Map<number, string>();
+  private readonly callbacks = new Map<number, PublishCallbacks>();
 
   constructor(options: RealtimeSocketOptions) {
     this.url = options.url;
@@ -110,14 +117,19 @@ export class RealtimeSocket {
     this.sendIfOpen({ t: 'unsub', c: channel });
   }
 
-  publish(channel: string, data: unknown): void {
+  publish(channel: string, data: unknown, callbacks?: PublishCallbacks): void {
     this.ensureConnected();
     const i = ++this.nextMessageId;
     const frame = JSON.stringify({ t: 'pub', c: channel, i, d: data });
     this.outbox.set(i, frame);
+    if (callbacks) this.callbacks.set(i, callbacks);
     if (this.outbox.size > this.maxOutbox) {
       const oldest = this.outbox.keys().next().value;
-      if (oldest !== undefined) this.outbox.delete(oldest);
+      if (oldest !== undefined) {
+        this.outbox.delete(oldest);
+        this.callbacks.get(oldest)?.onRejected?.('dropped'); // too many waiting: the oldest one gives way
+        this.callbacks.delete(oldest);
+      }
     }
     this.sendRaw(frame);
   }
@@ -217,10 +229,16 @@ export class RealtimeSocket {
       }
       case 'a':
         this.outbox.delete(message.i);
+        this.callbacks.get(message.i)?.onAck?.();
+        this.callbacks.delete(message.i);
         break;
       case 'err':
         // a refused publish will be refused again: do not keep retrying it
-        if (typeof message.i === 'number') this.outbox.delete(message.i);
+        if (typeof message.i === 'number') {
+          this.outbox.delete(message.i);
+          this.callbacks.get(message.i)?.onRejected?.(String(message.code ?? 'refused'));
+          this.callbacks.delete(message.i);
+        }
         break;
       default:
         break;

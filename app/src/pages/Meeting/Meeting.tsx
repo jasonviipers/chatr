@@ -24,6 +24,9 @@ import HostMiddleware from '../../middleware/HostMiddleware';
 import MeetingRepository from '../../repositories/MeetingRepository';
 import socket from './Meeting.socket';
 import { selectors, actions, MeetingState, MeetingActions, VideoState, MeetingWhiteboardDrawingState } from './Meeting.state';
+import { selectors as chatSelectors } from '../../components/Chat/Chat.state';
+import Chat from '../../components/Chat/Chat';
+import ChatService from '../../services/ChatService';
 import Page from '../../components/Page/Page';
 import Menu, { MenuPosition } from '../../components/Menu/Menu';
 import ActiveVideo from '../../components/ActiveVideo/ActiveVideo';
@@ -31,7 +34,9 @@ import VideoBlock from '../../components/VideoBlock/VideoBlock';
 import ActiveVideoSkeleton from '../../components/ActiveVideoSkeleton/ActiveVideoSkeleton';
 import styles from './Meeting.module.scss';
 
-interface MeetingProps extends MeetingState, MeetingActions, RouteComponentProps {}
+interface MeetingProps extends MeetingState, MeetingActions, RouteComponentProps {
+	chatUnread: number;
+}
 
 class Meeting extends Component<MeetingProps> {
 	static raiseHandTimeout = 5000;
@@ -42,6 +47,7 @@ class Meeting extends Component<MeetingProps> {
 	videoService: VideoService;
 	authService: AuthService;
 	notificationService: NotificationService;
+	chatService: ChatService;
 	whiteboardDrawingService: WhiteboardDrawingService;
 	whiteboardCanvasService: WhiteboardCanvasService;
 	screenCaptureService: ScreenCaptureService;
@@ -59,6 +65,7 @@ class Meeting extends Component<MeetingProps> {
 		this.videoService = new VideoService();
 		this.authService = new AuthService();
 		this.notificationService = new NotificationService();
+		this.chatService = new ChatService();
 		this.whiteboardDrawingService = new WhiteboardDrawingService();
 		this.whiteboardCanvasService = new WhiteboardCanvasService();
 		this.screenCaptureService = new ScreenCaptureService();
@@ -69,6 +76,10 @@ class Meeting extends Component<MeetingProps> {
 		this.hostMiddleware.auth(this.props.history);
 		this.meetingRepository = new MeetingRepository();
 		this.handleMenuRaiseHandClick = this.handleMenuRaiseHandClick.bind(this);
+		this.handleMenuChatClick = this.handleMenuChatClick.bind(this);
+		this.handleChatSend = this.handleChatSend.bind(this);
+		this.handleChatRetry = this.handleChatRetry.bind(this);
+		this.handleChatClose = this.handleChatClose.bind(this);
 		this.handleMenuEndMeetingClick = this.handleMenuEndMeetingClick.bind(this);
 		this.handleMenuVideoClick = this.handleMenuVideoClick.bind(this);
 		this.handleMenuAudioClick = this.handleMenuAudioClick.bind(this);
@@ -197,6 +208,22 @@ class Meeting extends Component<MeetingProps> {
 		socket.raiseHand.publish(id, connectionId);
 	}
 
+	handleMenuChatClick () {
+		this.chatService.toggle();
+	}
+
+	handleChatSend (text: string) {
+		return this.chatService.send(text);
+	}
+
+	handleChatRetry (id: string) {
+		this.chatService.retry(id);
+	}
+
+	handleChatClose () {
+		this.chatService.close();
+	}
+
 	handleMenuEndMeetingClick () {
 		const prompt = 'Are you sure to end meeting?';
 		AlertService.push(prompt, () => {
@@ -266,6 +293,10 @@ class Meeting extends Component<MeetingProps> {
 				this.props.replaceVideoRaiseHand(connectionId, false);
 			}, Meeting.raiseHandTimeout);
 		});
+	}
+
+	handleRemoteChat (meetingId: string) {
+		socket.chat.subscribe(meetingId, message => this.chatService.receive(message));
 	}
 
 	handleRemoteMemberRemove (meetingId: string) {
@@ -356,9 +387,11 @@ class Meeting extends Component<MeetingProps> {
       	canScreenShare={this.canScreenShare}
       	canWhiteboardEnable={this.canWhiteboardEnable}
       	canMemberRemove={this.activeVideo.memberRemove}
+      	chatUnread={this.props.chatUnread}
       	inviteText={this.inviteText}
       	isExpanded={this.isMenuExpanded(position)}
       	handleRaiseHandClick={this.handleMenuRaiseHandClick}
+      	handleChatClick={this.handleMenuChatClick}
       	handleEndMeetingClick={this.handleMenuEndMeetingClick}
       	handleVideoClick={this.handleMenuVideoClick}
       	handleAudioClick={this.handleMenuAudioClick}
@@ -385,6 +418,7 @@ class Meeting extends Component<MeetingProps> {
 	socketUnsubscribe () {
 		const { id } = this.props;
 		socket.raiseHand.unsubscribe(id);
+		socket.chat.unsubscribe(id);
 		socket.conferenceCall.unsubscribe(id);
 		socket.rtpTrackReplaced.unsubscribe(id);
 		socket.remoteDisconnect.unsubscribe(id);
@@ -412,6 +446,7 @@ class Meeting extends Component<MeetingProps> {
 		this.videoService.stopUserVideo();
 		this.meetingService.resetMeeting();
 		this.socketUnsubscribe();
+		this.chatService.reset();
 		this.peerService.disconnect();
 		this.authService.resetType();
 		this.props.replaceWhiteboardEnabled(false);
@@ -484,6 +519,7 @@ class Meeting extends Component<MeetingProps> {
 			this.meetingService.setId(localConnectionId, meetingId => {
 				if (meetingId) {
 					this.handleRemoteRaiseHand(meetingId);
+					this.handleRemoteChat(meetingId);
 					this.handleRemoteMemberRemove(meetingId);
 					this.handleDisconnect();
 					this.mediaService.getStream(history, localStream => {
@@ -531,6 +567,12 @@ class Meeting extends Component<MeetingProps> {
 							{this.menu('top')}
 							{this.menu('bottom')}
 						</div>
+						<Chat
+							myId={this.props.connectionId}
+							hostId={this.props.id}
+							onSend={this.handleChatSend}
+							onRetry={this.handleChatRetry}
+							onClose={this.handleChatClose} />
 					</Page>
 				</IonContent>
 			</IonPage>
@@ -538,4 +580,9 @@ class Meeting extends Component<MeetingProps> {
 	}
 }
 
-export default withRouter(connect(selectors, actions)(Meeting));
+const mapState = (state: Parameters<typeof selectors>[0] & Parameters<typeof chatSelectors>[0]) => ({
+	...selectors(state),
+	chatUnread: chatSelectors(state).unread,
+});
+
+export default withRouter(connect(mapState, actions)(Meeting));

@@ -14,9 +14,11 @@ interface MenuItemsProps {
   canScreenShare: boolean
   canWhiteboardEnable: boolean
   canMemberRemove: boolean
+  chatUnread: number
   screenShareVisibility: boolean
   handleInviteMemberClick: () => void
   handleRaiseHandClick: () => void
+  handleChatClick: () => void
   handleEndMeetingClick: () => void
   handleVideoClick: () => void
   handleAudioClick: () => void
@@ -64,6 +66,13 @@ export default class MenuItems extends Component<MenuItemsProps> {
 					handleClick: this.props.handleRaiseHandClick
 				},
 				{
+					name: 'chat',
+					active: true,
+					visibility: true,
+					badge: this.props.chatUnread,
+					handleClick: this.props.handleChatClick
+				},
+				{
 					name: 'end',
 					active: this.props.canEndMeeting,
 					visibility: true,
@@ -101,6 +110,7 @@ export default class MenuItems extends Component<MenuItemsProps> {
 					name={item.name}
 					active={item.active}
 					visibility={item.visibility}
+					badge={item.badge}
 					handleClick={item.handleClick} />
 			</div>
 		);

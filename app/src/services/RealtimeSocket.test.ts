@@ -157,6 +157,42 @@ describe('RealtimeSocket', () => {
     expect(latest().frames('pub')).toHaveLength(0);
   });
 
+  it('tells the sender when the server took a publish, and when it refused it', () => {
+    const { socket, latest } = setup();
+    const accepted = { onAck: vi.fn(), onRejected: vi.fn() };
+    const refused = { onAck: vi.fn(), onRejected: vi.fn() };
+    socket.publish('/chat/m1', { id: 'a' }, accepted);
+    socket.publish('/chat/m1', { id: 'b' }, refused);
+    latest().open();
+    const [first, second] = latest().frames('pub').map((frame) => frame['i']);
+
+    expect(accepted.onAck).not.toHaveBeenCalled(); // not before the server said so
+    latest().receive({ t: 'a', i: first });
+    latest().receive({ t: 'err', code: 'rate_limited', i: second });
+
+    expect(accepted.onAck).toHaveBeenCalledTimes(1);
+    expect(accepted.onRejected).not.toHaveBeenCalled();
+    expect(refused.onRejected).toHaveBeenCalledWith('rate_limited');
+    expect(refused.onAck).not.toHaveBeenCalled();
+
+    latest().receive({ t: 'a', i: first }); // a repeated ack is harmless
+    expect(accepted.onAck).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps waiting for the ack of a message that was sent while the connection died', () => {
+    const { socket, latest } = setup();
+    const callbacks = { onAck: vi.fn(), onRejected: vi.fn() };
+    socket.publish('/chat/m1', { id: 'a' }, callbacks);
+    latest().open();
+    latest().drop(); // no ack came
+    vi.advanceTimersByTime(250);
+    latest().open();
+    const id = latest().frames('pub')[0]!['i'];
+    expect(callbacks.onRejected).not.toHaveBeenCalled();
+    latest().receive({ t: 'a', i: id });
+    expect(callbacks.onAck).toHaveBeenCalledTimes(1);
+  });
+
   it('re-identifies itself on every connection so host-only actions keep working', () => {
     const { socket, latest } = setup();
     socket.identify('hostpeer01', 'token-123456');

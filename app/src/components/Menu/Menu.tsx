@@ -19,9 +19,11 @@ interface MenuProps {
   canScreenShare: boolean;
   canWhiteboardEnable: boolean;
   canMemberRemove: boolean;
+  chatUnread: number;
   inviteText: string;
   isExpanded: boolean;
   handleRaiseHandClick: () => void;
+  handleChatClick: () => void;
   handleEndMeetingClick: () => void;
   handleVideoClick: () => void;
   handleAudioClick: () => void;
@@ -99,9 +101,11 @@ export default class Menu extends Component<MenuProps, MenuLocalState> {
 					canScreenShare={this.props.canScreenShare}
 					canWhiteboardEnable={this.props.canWhiteboardEnable}
 					canMemberRemove={this.props.canMemberRemove}
+					chatUnread={this.props.chatUnread}
 					screenShareVisibility={this.screenShareVisibility}
 					handleInviteMemberClick={this.handleInviteMemberClick}
 					handleRaiseHandClick={this.props.handleRaiseHandClick}
+					handleChatClick={this.props.handleChatClick}
 					handleEndMeetingClick={this.props.handleEndMeetingClick}
 					handleVideoClick={this.props.handleVideoClick}
 					handleAudioClick={this.props.handleAudioClick}

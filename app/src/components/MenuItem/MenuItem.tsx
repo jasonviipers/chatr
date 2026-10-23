@@ -9,6 +9,7 @@ import {
 	laptopOutline,
 	easelOutline,
 	personRemoveOutline,
+	chatbubbleEllipsesOutline,
 } from 'ionicons/icons';
 import styles from './MenuItem.module.scss';
 
@@ -23,11 +24,14 @@ type MenuItemName =
   | 'screenShare'
   | 'whiteboard'
   | 'memberRemove'
+  | 'chat'
 
 export interface MenuItemProps {
   name: MenuItemName;
   active: boolean;
   visibility: boolean;
+  /** a count shown on the icon (unread chat messages) */
+  badge?: number;
   handleClick: (event: MouseEvent) => void;
 }
 
@@ -41,6 +45,7 @@ export default class MenuItem extends Component<MenuItemProps> {
 		screenShare: laptopOutline,
 		whiteboard: easelOutline,
 		memberRemove: personRemoveOutline,
+		chat: chatbubbleEllipsesOutline,
 	};
 
 	get iconClass() {
@@ -57,6 +62,7 @@ export default class MenuItem extends Component<MenuItemProps> {
 			this.props.visibility && (
 				<div className={styles.menuItem} onClick={this.props.handleClick}>
 					<IonIcon className={this.iconClass} icon={this.icon} />
+					{this.props.badge ? <span className={styles.badge} aria-label={`${this.props.badge} unread`}>{this.props.badge > 9 ? '9+' : this.props.badge}</span> : null}
 				</div>
 			)
 		);

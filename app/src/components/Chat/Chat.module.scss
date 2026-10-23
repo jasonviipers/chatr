@@ -1,0 +1,229 @@
+// The chat sits above the meeting: a panel on the right on a computer, a sheet above the menu on a phone.
+// It stays mounted (so the draft and the scroll position survive) and slides in and out.
+.chat {
+  position: fixed;
+  z-index: 10;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--ion-color-dark);
+  color: var(--ion-color-dark-contrast);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.35);
+  transform: translateX(105%);
+  visibility: hidden;
+  transition:
+    transform 0.2s ease,
+    visibility 0s linear 0.2s;
+
+  &.open {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.2s ease;
+  }
+
+  &.mobile {
+    top: auto;
+    left: 0;
+    width: 100%;
+    bottom: var(--app-menu-height);
+    height: min(60vh, 520px);
+    border-radius: 12px 12px 0 0;
+    transform: translateY(105%);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
+
+    &.open {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 8px 12px 16px;
+    border-bottom: 1px solid var(--ion-color-dark-tint);
+  }
+
+  .title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    font-size: 1.5rem;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--ion-color-dark-tint);
+    }
+  }
+
+  .listWrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .list {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    padding: 12px 16px;
+    overscroll-behavior: contain;
+  }
+
+  .empty {
+    margin: 24px 8px;
+    text-align: center;
+    color: var(--ion-color-medium);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .messages {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .message {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    max-width: 88%;
+
+    &.mine {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+  }
+
+  .meta {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+    font-size: 0.75rem;
+  }
+
+  .sender {
+    font-weight: 600;
+  }
+
+  .time {
+    color: var(--ion-color-medium);
+  }
+
+  .bubble {
+    padding: 8px 12px;
+    border-radius: 14px 14px 14px 4px;
+    background: var(--ion-color-dark-tint);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+
+  .mine .bubble {
+    border-radius: 14px 14px 4px 14px;
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+  }
+
+  .status {
+    margin-top: 2px;
+    font-size: 0.72rem;
+    color: var(--ion-color-medium);
+  }
+
+  .retry {
+    padding: 0;
+    background: none;
+    border: 0;
+    color: var(--ion-color-danger);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .form {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 12px 12px;
+    border-top: 1px solid var(--ion-color-dark-tint);
+  }
+
+  .input {
+    flex: 1;
+    min-width: 0;
+    resize: none;
+    padding: 9px 12px;
+    font: inherit;
+    line-height: 1.3;
+    color: inherit;
+    background: var(--ion-color-dark-shade);
+    border: 1px solid var(--ion-color-dark-tint);
+    border-radius: 18px;
+    outline: none;
+
+    &:focus {
+      border-color: var(--ion-color-primary);
+    }
+
+    &::placeholder {
+      color: var(--ion-color-medium);
+    }
+  }
+
+  .send {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 38px;
+    height: 38px;
+    font-size: 1.25rem;
+    color: var(--ion-color-primary-contrast);
+    background: var(--ion-color-primary);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  .counter {
+    position: absolute;
+    top: -8px;
+    right: 62px;
+    padding: 0 6px;
+    font-size: 0.7rem;
+    color: var(--ion-color-medium);
+    background: var(--ion-color-dark);
+    border-radius: 8px;
+  }
+}

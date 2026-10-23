@@ -13,6 +13,7 @@ import { reducers as hosts } from './pages/Hosts/Hosts.state';
 import { reducers as privacy } from './pages/Privacy/Privacy.state';
 import { reducers as privacyEdit } from './pages/PrivacyEdit/PrivacyEdit.state';
 import { reducers as whiteboard } from './components/Whiteboard/Whiteboard.state';
+import { reducers as chat } from './components/Chat/Chat.state';
 
 const reducers = combineReducers({
   app,
@@ -27,6 +28,7 @@ const reducers = combineReducers({
   privacy,
   privacyEdit,
   whiteboard,
+  chat,
 });
 
 export default createStore(reducers, composeWithDevTools(applyMiddleware()));

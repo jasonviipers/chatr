@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: center;
   position: fixed;
+  z-index: 2000; // above the chat panel and everything else
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
