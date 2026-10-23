@@ -12,6 +12,8 @@ import electronServe from 'electron-serve';
 import windowStateKeeper from 'electron-window-state';
 import { join } from 'path';
 
+import { buildCsp } from './csp';
+
 // Define components for a watcher to detect when the webapp is changed so we can reload in Dev mode.
 const reloadWatcher = {
   debouncer: null,
@@ -222,11 +224,7 @@ export function setupContentSecurityPolicy(customScheme: string): void {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': [
-          electronIsDev
-            ? `default-src ${customScheme}://* 'unsafe-inline' devtools://* 'unsafe-eval' data:`
-            : `default-src ${customScheme}://* 'unsafe-inline' data:`,
-        ],
+        'Content-Security-Policy': [buildCsp({ customScheme, isDev: electronIsDev })],
       },
     });
   });

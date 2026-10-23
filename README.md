@@ -89,5 +89,9 @@ microphone is in [docs/voice-cancellation.md](docs/voice-cancellation.md).
 Development is plain HTTP (`http://localhost:3000` for the app, `http://localhost:8080` for the API, no certificate
 needed); production is HTTPS (see [api/README.md](api/README.md)).
 
+The desktop app (Electron) is started with `cd app && bun run desktop:serve`. Its window only allows connections to
+the API under a Content Security Policy (`app/electron/src/csp.ts`): `http`/`ws` too while developing, `https`/`wss`
+only once packaged.
+
 Or from the repository root: `bun run dev:api` and `bun run dev:app`. Dependency install scripts are not run
 (`"trustedDependencies": []` in each `package.json`); add a package there if it really needs one.

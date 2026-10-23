@@ -1,5 +1,5 @@
 {
-  "name": "Chatr",
+  "name": "chatr",
   "version": "1.0.0",
   "description": "An Amazing Capacitor App",
   "author": {
@@ -19,6 +19,7 @@
   },
   "scripts": {
     "build": "tsc && electron-rebuild",
+    "test": "node --test src/csp.test.ts",
     "electron:start-live": "node ./live-runner.js",
     "electron:start": "bun run build && electron --inspect=5858 ./",
     "electron:pack": "bun run build && electron-builder build --dir -c ./electron-builder.config.json",
