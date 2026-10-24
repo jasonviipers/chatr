@@ -67,7 +67,8 @@ describe('RealtimeSocket', () => {
     latest().open();
 
     expect(latest().frames('hi')[0]).toMatchObject({ t: 'hi', sid: expect.any(String) });
-    expect(latest().frames('sub')[0]).toMatchObject({ c: '/raiseHand/m1', since: 0 });
+    // a newcomer starts at "now": asking for everything since 0 would replay the channel's whole history
+    expect(latest().frames('sub')[0]).toEqual({ t: 'sub', c: '/raiseHand/m1' });
 
     latest().receive({ t: 'm', c: '/raiseHand/m1', s: 1, d: 'peer-a' });
     expect(handler).toHaveBeenCalledWith('peer-a');
@@ -108,6 +109,29 @@ describe('RealtimeSocket', () => {
     latest().open();
     expect(socket.status).toBe('open');
     expect(latest().frames('sub')[0]).toMatchObject({ c: '/whiteboardDrawingAdd/m1', since: 41 });
+  });
+
+  it('resumes from the position the server confirmed, even when nothing was published yet', () => {
+    const { socket, latest } = setup();
+    socket.subscribe('/raiseHand/m1', vi.fn());
+    latest().open();
+    latest().receive({ t: 'ok', c: '/raiseHand/m1', s: 0, g: false });
+
+    latest().drop();
+    vi.advanceTimersByTime(250);
+    latest().open();
+    expect(latest().frames('sub')[0]).toMatchObject({ c: '/raiseHand/m1', since: 0 });
+  });
+
+  it('subscribes again from "now" when the first answer never arrived', () => {
+    const { socket, latest } = setup();
+    socket.subscribe('/conferenceCall/m1', vi.fn());
+    latest().open();
+
+    latest().drop();
+    vi.advanceTimersByTime(250);
+    latest().open();
+    expect(latest().frames('sub')[0]).toEqual({ t: 'sub', c: '/conferenceCall/m1' });
   });
 
   it('caps the backoff and jitters it so a crowd does not reconnect in lockstep', () => {

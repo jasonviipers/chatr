@@ -44,6 +44,12 @@ export interface PublishCallbacks {
 interface Subscription {
   handler: (data: any) => void;
   lastSeq: number;
+  /**
+   * The server has answered this subscription (or sent a message on it), so `lastSeq` is a real position in the
+   * channel. Until then there is nothing to resume from, and asking for "everything since 0" would replay the
+   * channel's whole history to a newcomer (for instance every earlier call announcement, so they dial everybody).
+   */
+  confirmed: boolean;
 }
 
 const OPEN = 1;
@@ -108,7 +114,7 @@ export class RealtimeSocket {
 
   subscribe(channel: string, handler: (data: any) => void): void {
     this.ensureConnected();
-    this.subscriptions.set(channel, { handler, lastSeq: 0 });
+    this.subscriptions.set(channel, { handler, lastSeq: 0, confirmed: false });
     this.sendIfOpen({ t: 'sub', c: channel });
   }
 
@@ -177,7 +183,8 @@ export class RealtimeSocket {
       this.setStatus('open');
       this.sendRaw(JSON.stringify(this.hello()));
       for (const [channel, subscription] of this.subscriptions) {
-        this.sendRaw(JSON.stringify({ t: 'sub', c: channel, since: subscription.lastSeq }));
+        const resume = subscription.confirmed ? { since: subscription.lastSeq } : {};
+        this.sendRaw(JSON.stringify({ t: 'sub', c: channel, ...resume }));
       }
       for (const frame of this.outbox.values()) this.sendRaw(frame);
       this.startHeartbeat();
@@ -214,6 +221,7 @@ export class RealtimeSocket {
         const subscription = this.subscriptions.get(message.c);
         if (!subscription || message.s <= subscription.lastSeq) return; // unsubscribed, or already seen
         subscription.lastSeq = message.s;
+        subscription.confirmed = true;
         try {
           subscription.handler(message.d);
         } catch (error) {
@@ -223,7 +231,10 @@ export class RealtimeSocket {
       }
       case 'ok': {
         const subscription = this.subscriptions.get(message.c);
-        if (subscription && typeof message.s === 'number' && message.s > subscription.lastSeq) subscription.lastSeq = message.s;
+        if (subscription && typeof message.s === 'number') {
+          subscription.confirmed = true;
+          if (message.s > subscription.lastSeq) subscription.lastSeq = message.s;
+        }
         if (message.g === true) this.onGap?.(message.c);
         break;
       }
