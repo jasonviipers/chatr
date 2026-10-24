@@ -11,6 +11,11 @@ describe('senderLabel', () => {
     expect(senderLabel('host99', 'host99', 'host99')).toBe('You');
   });
 
+  it('leaves dashes and underscores out of the tag (ids are base64url)', () => {
+    expect(senderLabel('abc_-x9Q-', 'me', 'host')).toBe('Participant CX9Q');
+    expect(senderLabel('qwe-12_rt', 'me', 'host')).toBe('Participant 12RT');
+  });
+
   it('tells guests apart by the end of their id', () => {
     expect(senderLabel('abcd-wxyz', 'me', 'host')).toBe('Participant WXYZ');
     expect(senderLabel('abcd-wxyz', 'me', 'host')).not.toBe(senderLabel('abcd-1234', 'me', 'host'));
