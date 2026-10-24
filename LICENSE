@@ -1,0 +1,27 @@
+Copyright (c) 2026 Jason Michel. All rights reserved.
+
+PROPRIETARY SOFTWARE
+
+This software (the source code, the documentation and the other files in this repository, together called "Chatr")
+is proprietary. No licence of any kind is granted. Nobody may use, copy, modify, merge, publish, distribute,
+sublicense, sell or otherwise exploit Chatr, in whole or in part, unless the copyright holder has agreed to it in a
+written agreement that the copyright holder has signed.
+
+OWNERSHIP
+
+The copyright holder is the person named in the first line. Ownership of the copyright can be transferred only by a
+written assignment signed by the copyright holder. When ownership has been transferred, the new owner replaces the
+name in the first line with their own, and this notice then applies in the new owner's name.
+
+THIRD-PARTY COMPONENTS
+
+Chatr includes and depends on open-source packages. Each of them is licensed by its authors under its own terms,
+which this notice does not change; they are listed in THIRD-PARTY-LICENSES.md. The rights reserved above cover only
+the code and documents written for this project.
+
+NO WARRANTY
+
+Unless a signed written agreement says otherwise, CHATR IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM, OUT OF OR IN CONNECTION WITH CHATR OR ITS USE.

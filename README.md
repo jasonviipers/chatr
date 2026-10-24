@@ -97,3 +97,9 @@ only once packaged.
 
 Or from the repository root: `bun run dev:api` and `bun run dev:app`. Dependency install scripts are not run
 (`"trustedDependencies": []` in each `package.json`); add a package there if it really needs one.
+
+## Licence
+
+Proprietary software, all rights reserved (see [LICENSE](LICENSE)); the open-source packages it uses keep their own
+licences ([THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)). The footer of the app shows `REACT_APP_NAME` and the current
+year, so the new owner sets their own name there.
