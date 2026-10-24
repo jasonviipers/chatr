@@ -110,7 +110,7 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | ws | 8.22.0 | MIT | <https://github.com/websockets/ws> |
 | zod | 4.6.7 | MIT | <https://github.com/colinhacks/zod> |
 
-## App (297 packages)
+## App (287 packages)
 
 | Package | Version | Licence | Source |
 | --- | --- | --- | --- |
@@ -130,7 +130,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | @emotion/unitless | 0.10.0 | MIT | <https://github.com/emotion-js/emotion.git#main> |
 | @ionic/cli-framework-output | 2.2.8 | MIT | <https://github.com/ionic-team/ionic-cli> |
 | @ionic/core | 9.0.9 | MIT | <https://github.com/ionic-team/ionic-framework> |
-| @ionic/pwa-elements | 3.4.0 | MIT | <https://github.com/ionic-team/ionic-pwa-elements> |
 | @ionic/react | 9.0.9 | MIT | <https://github.com/ionic-team/ionic-framework> |
 | @ionic/react-router | 9.0.9 | MIT | <https://github.com/ionic-team/ionic-framework> |
 | @ionic/utils-array | 2.1.6 | MIT | <https://github.com/ionic-team/ionic-cli> |
@@ -194,7 +193,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | cssstyle | 4.6.0 | MIT | <https://github.com/jsdom/cssstyle> |
 | csstype | 3.2.3 | MIT | <https://github.com/frenic/csstype> |
 | data-urls | 5.0.0 | MIT | <https://github.com/jsdom/data-urls> |
-| debug | 2.6.9 | MIT | <https://github.com/visionmedia/debug> |
 | debug | 4.4.3 | MIT | <https://github.com/debug-js/debug> |
 | decimal.js | 10.6.0 | MIT | <https://github.com/MikeMcl/decimal.js> |
 | decompress-response | 6.0.0 | MIT | <https://github.com/sindresorhus/decompress-response> |
@@ -209,7 +207,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | domutils | 3.2.2 | BSD-2-Clause | <https://github.com/fb55/domutils> |
 | dunder-proto | 1.0.1 | MIT | <https://github.com/es-shims/dunder-proto> |
 | electron-is-dev | 2.0.0 | MIT | <https://github.com/sindresorhus/electron-is-dev> |
-| electron-squirrel-startup | 1.0.1 | Apache-2.0 | <https://github.com/mongodb-js/electron-squirrel-startup> |
 | elementtree | 0.1.7 | Apache-2.0 | <https://github.com/racker/node-elementtree> |
 | emoji-regex | 8.0.0 | MIT | <https://github.com/mathiasbynens/emoji-regex> |
 | end-of-stream | 1.4.5 | MIT | <https://github.com/mafintosh/end-of-stream> |
@@ -221,7 +218,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | es-errors | 1.3.0 | MIT | <https://github.com/ljharb/es-errors> |
 | es-object-atoms | 1.1.2 | MIT | <https://github.com/ljharb/es-object-atoms> |
 | es-set-tostringtag | 2.1.0 | MIT | <https://github.com/es-shims/es-set-tostringtag> |
-| es6-promise-plugin | 4.2.2 | MIT | <https://github.com/vstirbu/PromisesPlugin> |
 | eventemitter3 | 4.0.7 | MIT | <https://github.com/primus/eventemitter3> |
 | eventemitter3 | 5.0.4 | MIT | <https://github.com/primus/eventemitter3> |
 | events | 3.3.0 | MIT | <https://github.com/Gozala/events> |
@@ -269,7 +265,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | is-unicode-supported | 0.1.0 | MIT | <https://github.com/sindresorhus/is-unicode-supported> |
 | is-wsl | 2.2.0 | MIT | <https://github.com/sindresorhus/is-wsl> |
 | isexe | 2.0.0 | ISC | <https://github.com/isaacs/isexe> |
-| js-tokens | 4.0.0 | MIT | <https://github.com/lydell/js-tokens> |
 | jsdom | 26.1.0 | MIT | <https://github.com/jsdom/jsdom> |
 | json-buffer | 3.0.1 | MIT | <https://github.com/dominictarr/json-buffer> |
 | jsonfile | 6.2.1 | MIT | <https://github.com/jprichardson/node-jsonfile> |
@@ -281,7 +276,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | lodash.clonedeep | 4.5.0 | MIT | <https://github.com/lodash/lodash> |
 | lodash.isequal | 4.5.0 | MIT | <https://github.com/lodash/lodash> |
 | log-symbols | 4.1.0 | MIT | <https://github.com/sindresorhus/log-symbols> |
-| loose-envify | 1.4.0 | MIT | <https://github.com/zertosh/loose-envify> |
 | lru-cache | 10.4.3 | ISC | <https://github.com/isaacs/node-lru-cache> |
 | lru-cache | 11.5.3 | BlueOak-1.0.0 | <https://github.com/isaacs/node-lru-cache> |
 | math-intrinsics | 1.1.0 | MIT | <https://github.com/es-shims/math-intrinsics> |
@@ -295,7 +289,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | minizlib | 3.1.0 | MIT | <https://github.com/isaacs/minizlib> |
 | mkdirp-classic | 0.5.3 | MIT | <https://github.com/mafintosh/mkdirp-classic> |
 | moment | 2.31.0 | MIT | <https://github.com/moment/moment> |
-| ms | 2.0.0 | MIT | <https://github.com/zeit/ms> |
 | ms | 2.1.3 | MIT | <https://github.com/vercel/ms> |
 | nanoid | 6.0.2 | MIT | <https://github.com/ai/nanoid> |
 | napi-build-utils | 2.0.0 | MIT | <https://github.com/inspiredware/napi-build-utils> |
@@ -303,7 +296,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | node-abi | 3.101.0 | MIT | <https://github.com/electron/node-abi> |
 | node-addon-api | 7.1.1 | MIT | <https://github.com/nodejs/node-addon-api> |
 | nwsapi | 2.2.28 | MIT | <https://github.com/dperini/nwsapi> |
-| object-assign | 4.1.1 | MIT | <https://github.com/sindresorhus/object-assign> |
 | object-inspect | 1.13.4 | MIT | <https://github.com/inspect-js/object-inspect> |
 | once | 1.4.0 | ISC | <https://github.com/isaacs/once> |
 | onetime | 5.1.2 | MIT | <https://github.com/sindresorhus/onetime> |
@@ -322,7 +314,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | plist | 3.1.1 | MIT | <https://github.com/TooTallNate/node-plist> |
 | prebuild-install | 7.1.3 | MIT | <https://github.com/prebuild/prebuild-install> |
 | prompts | 2.4.2 | MIT | <https://github.com/terkelg/prompts> |
-| prop-types | 15.8.1 | MIT | <https://github.com/facebook/prop-types> |
 | proxy-from-env | 2.1.0 | MIT | <https://github.com/Rob--W/proxy-from-env> |
 | pump | 3.0.4 | MIT | <https://github.com/mafintosh/pump> |
 | punycode | 2.3.1 | MIT | <https://github.com/mathiasbynens/punycode.js> |
@@ -332,7 +323,6 @@ cd ../app && bun x license-checker-rseidelsohn --production --excludePrivatePack
 | rc | 1.2.8 | (BSD-2-Clause OR MIT OR Apache-2.0) | <https://github.com/dominictarr/rc> |
 | react | 19.3.1 | MIT | <https://github.com/react/react> |
 | react-dom | 19.3.1 | MIT | <https://github.com/react/react> |
-| react-is | 16.13.1 | MIT | <https://github.com/facebook/react> |
 | react-property | 2.0.2 | MIT | <https://github.com/remarkablemark/react-dom-core> |
 | react-redux | 9.3.0 | MIT | <https://github.com/reduxjs/react-redux> |
 | react-router | 6.30.6 | MIT | <https://github.com/remix-run/react-router> |
