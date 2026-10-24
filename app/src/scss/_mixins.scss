@@ -13,6 +13,12 @@
     margin: 20px 0;
   }
 
+  // smaller than h2 (the browser default would make it bigger), so long texts keep their hierarchy
+  h3 {
+    font-size: 1.05em;
+    margin: 16px 0 10px;
+  }
+
   p {
     line-height: 1.6em;
     margin-bottom: 30px;
