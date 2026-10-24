@@ -4,6 +4,10 @@ Voice meetings for your team, on your own server. A host starts a meeting and sh
 browser, a phone or the desktop app. Voice comes first, and when people want it there is a camera, a text chat, a
 shared whiteboard and screen sharing. It keeps working on a bad connection.
 
+**See how it looks: [chat.viipers.com](https://chat.viipers.com).** Starting a meeting needs a host account, which only
+the administrator of a server can create, so that page is for looking around; [deploy your own](#deploy) to host
+meetings.
+
 ## What to expect
 
 ### Getting in
