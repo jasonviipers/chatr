@@ -1,0 +1,45 @@
+# The API for a Chatr whose web app is on Cloudflare Pages. It can run on any machine that has Docker (a VPS,
+# a home server): nothing needs to be opened to the internet, because the tunnel connects out to Cloudflare.
+#
+#   cp .env.example .env     # set APP_HOST, AUTH_SECRET and TUNNEL_TOKEN
+#   docker compose up -d --build
+name: chatr-api
+
+services:
+  api:
+    build:
+      context: ../../api
+      dockerfile: .Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      TLS: "off" # Cloudflare terminates HTTPS
+      TRUST_PROXY: "true" # Cloudflare sets X-Forwarded-For
+      WEB_APP_HOST: ${APP_HOST:?set APP_HOST in .env}
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env (48+ random characters)}
+      DATABASE_PATH: /app/data/chatr.sqlite
+      STUN_URLS: ${STUN_URLS:-stun:stun.l.google.com:19302}
+      TURN_URLS: ${TURN_URLS:-}
+      TURN_SECRET: ${TURN_SECRET:-}
+    volumes:
+      - api-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Connects this machine to Cloudflare. In the tunnel's settings, add a public hostname (for example
+  # chat-api.example.com) whose service is  http://api:8080
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+
+volumes:
+  api-data:

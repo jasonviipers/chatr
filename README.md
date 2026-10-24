@@ -1,79 +1,101 @@
-## Server Requirements
+# Chatr
 
-You can build web (PWA), mobile (Android), and desktop (Mac, Windows, and 
-Linux) apps from this package. All of the apps are backed by a single API. And 
-the API is developed as a separate package from the frontend package for 
-isolation. Here are the server-side requirements for deploying the web app 
-(frontend) and API (backend).
+Voice meetings for your team, on your own server. A host starts a meeting and shares a link; people join from a
+browser, a phone or the desktop app. Voice comes first, and when people want it there is a camera, a text chat, a
+shared whiteboard and screen sharing. It keeps working on a bad connection.
 
-* CPU: 1 vCore (Minimum), 2CPU (recommended)
-* Memory: 2 GB (Minimum)
-* Space: 1 GB (Minimum)
-* OS: Ubuntu 20.04 or higher
+## What to expect
 
-## Server Setup
+### Getting in
 
-Get a VPS/Cloud/Dedicated Server and install Ubuntu OS. We suggest to go with 20.04 as it is more stable.
+<table>
+<tr>
+<td width="33%" valign="top"><img src="docs/screenshots/01-home.png" alt="The home screen with the Start a Meeting and Join a Meeting buttons"><br><b>Home</b><br>Hosts start a meeting, everybody else joins one.</td>
+<td width="33%" valign="top"><img src="docs/screenshots/02-start.png" alt="The host sign-in"><br><b>Host sign-in</b><br>Only hosts created by the administrator can start a meeting.</td>
+<td width="33%" valign="top"><img src="docs/screenshots/03-join.png" alt="Joining a meeting with its id"><br><b>Join</b><br>Open the invitation link, or type the meeting id. No account needed.</td>
+</tr>
+</table>
 
-### You need the following things from your server:
+### In a meeting
 
-* IP Address
-* Root SSH Access (Username & Password)
+Meetings are voice first. Everybody who has no camera on is an avatar with a label (**You**, **Host** or
+**Participant**), never a black square. Calls go directly between the participants, so nothing is recorded or stored on the server.
 
-1. Logging In (SSH)
+<table>
+<tr>
+<td width="33%" valign="top"><img src="docs/screenshots/09-meeting-voice.png" alt="A voice meeting: the host as an avatar"><br><b>Voice only</b><br>The menu at the bottom: invite, raise hand, chat, end meeting, camera, microphone.</td>
+<td width="33%" valign="top"><img src="docs/screenshots/10-meeting-camera.jpg" alt="A meeting with the host's camera on"><br><b>Camera on</b><br>The camera is off until you switch it on. Everybody sees it, people who join later too.</td>
+<td width="33%" valign="top"><img src="docs/screenshots/11-meeting-participants.jpg" alt="The row of participants under the main picture"><br><b>Participants</b><br>Scroll down for everybody else. A small slashed microphone shows who has muted themselves.</td>
+</tr>
+</table>
 
-Install Putty if you are on Windows otherwise you can use Terminal if you are using MacOS.
+The buttons show their state: a slashed microphone or camera means it is off. Tap to switch.
 
-``` ssh root@YOUR_SERVER_IP ```
+### Chat, whiteboard and screen sharing
 
-Now it'll ask for your password. Enter your password and you'll be into your server.
+<table>
+<tr>
+<td width="50%" valign="top"><img src="docs/screenshots/14-chat.png" alt="The chat panel"><br><b>Chat</b><br>For people who cannot or do not want to speak. Messages show "Sending…" while the connection is bad and arrive by themselves; a refused one offers a retry.</td>
+<td width="50%" valign="top"><img src="docs/screenshots/15-whiteboard.png" alt="The shared whiteboard with a drawing"><br><b>Whiteboard</b><br>Draw together; colours and brush sizes are on the left. Everybody sees it as it is drawn.</td>
+</tr>
+</table>
 
-Note: If it asks you to save fingerprint, write Yes and press enter.
+**Screen sharing:** share a screen or a window from the top bar; tap the shared picture in the row to make it the main one.
 
-2. Installing NodeJS
+### Administration
 
-We have to install NodeJS now to run our application and install dependencies. Run each line one by one.
+The first time the app starts, the administrator is created (that is only possible once). The administrator creates the
+hosts, who sign in with the credentials that are copied to the clipboard, and edits the privacy policy shown to everybody.
 
-`` curl -sL https://deb.nodesource.com/setup_26.x -o nodesource_setup.sh
-sudo bash nodesource_setup.sh
-sudo apt-get install -y nodejs
-sudo apt install apt-transport-https ca-certificates curl software-properties-common ``
+<table>
+<tr>
+<td width="25%" valign="top"><img src="docs/screenshots/04-install.png" alt="First-run installation of the administrator"><br><b>First run</b><br>Create the administrator.</td>
+<td width="25%" valign="top"><img src="docs/screenshots/05-admin-sign-in.png" alt="Administrator sign-in"><br><b>Sign in</b><br>Throttled and locked after repeated failures.</td>
+<td width="25%" valign="top"><img src="docs/screenshots/06-hosts-create.png" alt="Creating a host"><br><b>Create a host</b><br>The credentials are copied, ready to send.</td>
+<td width="25%" valign="top"><img src="docs/screenshots/07-hosts.png" alt="The list of hosts"><br><b>Hosts</b><br>Last meeting of each host, and delete.</td>
+</tr>
+</table>
 
-3. Installing Docker
+<img src="docs/screenshots/08-privacy-editor.png" alt="The privacy policy editor" width="49%">
 
-We have to install Docker to run our Proxy Server and main application.
+**Privacy policy:** edited here with a small editor, shown at `/privacy` (the HTML is cleaned when it is saved).
 
-`` curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-sudo apt update
-apt-cache policy docker-ce
-sudo apt install docker-ce ``
+### On a phone and on the desktop
 
-Press Y.
+The same app runs in the browser, as an installed web app, on Android and iOS (Capacitor) and on the desktop (Electron).
+On a small screen the chat opens as a sheet above the menu, and the badge on the chat button counts unread messages.
 
-`` sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose ``
+<p>
+<img src="docs/screenshots/20-mobile-home.png" alt="The home screen on a phone" width="240">
+<img src="docs/screenshots/22-mobile-chat.png" alt="The chat on a phone" width="240">
+</p>
 
-Creating Docker Network for communication.
+<img src="docs/screenshots/30-desktop-app.png" alt="The desktop app showing a meeting with the camera on" width="720">
 
-``` docker network create connect-proxy ```
+The desktop app (Electron) runs on Windows, macOS and Linux.
 
-You have successfully created our server.
+The screenshots use made-up names and a drawn camera picture; to retake them, start the app and run the script in
+[docs/screenshots/README.md](docs/screenshots/README.md).
 
-## Running the API
+---
 
-The backend in `api/` is a single Node 26 process (Hono, Drizzle + SQLite, Better Auth, a WebSocket gateway
-and the WebRTC signalling). Configuration, security notes, TURN setup and the import of an old database are in
-[api/README.md](api/README.md).
+## Deploy
 
-With Docker, put a secret in a `.env` file next to `.docker-compose.yml` and start the stack:
+Two ways, both with HTTPS (needed for cameras and microphones). The step-by-step guides are in [deploy/](deploy/README.md):
 
-``` echo "AUTH_SECRET=$(node -p "require('crypto').randomBytes(48).toString('base64url')")" > .env
-docker compose -f .docker-compose.yml up -d --build ```
+- **Cloudflare:** the web app on Cloudflare Pages, the API on any machine with Docker through a Cloudflare Tunnel (nothing to
+  open on your network). [Guide](deploy/cloudflare/README.md)
+- **Your own server (VPS):** one `docker compose up` for the web app with automatic HTTPS, the API and, if you want, a
+  TURN relay for strict networks. [Guide](deploy/vps/README.md)
 
-nginx publishes the API under `/api`, so the web app is built with `REACT_APP_API_HOST=your-domain.com/api`
-(or `api.your-domain.com` when the API has its own host name). Add `--profile turn` to also run a TURN relay for
-participants on mobile data or behind strict firewalls.
+A server with 1 vCPU and 2 GB of memory is enough to start. The first visit asks you to create the administrator.
+
+## The API
+
+The backend in `api/` is a single Node 26 process (Hono, Drizzle + SQLite, Better Auth, a WebSocket gateway and the WebRTC
+signalling). Configuration, security notes, TURN setup and the import of an old database are in
+[api/README.md](api/README.md). `.docker-compose.yml` in the root is a development stack behind nginx; for a real
+server use [deploy/](deploy/README.md).
 
 ## Development
 
@@ -100,6 +122,6 @@ Or from the repository root: `bun run dev:api` and `bun run dev:app`. Dependency
 
 ## Licence
 
-Proprietary software, all rights reserved (see [LICENSE](LICENSE)); the open-source packages it uses keep their own
-licences ([THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)). The footer of the app shows `REACT_APP_NAME` and the current
-year, so the new owner sets their own name there.
+[MIT](LICENSE): use it, change it and sell it, as long as the copyright notice stays. The open-source packages it
+uses keep their own licences ([THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)). The footer of the app shows
+`REACT_APP_NAME` and the current year; set your own name there.

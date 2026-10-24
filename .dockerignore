@@ -1,0 +1,16 @@
+.git
+sale
+**/node_modules
+**/build
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.exemple
+**/*.sqlite
+**/*.sqlite-wal
+**/*.sqlite-shm
+**/*.pem
+api/data
+api/ssl
+app/electron
+docs

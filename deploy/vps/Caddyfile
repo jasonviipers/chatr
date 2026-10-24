@@ -1,0 +1,27 @@
+# Serves the built web app and forwards /api (REST, the realtime socket and the WebRTC signalling) to the API.
+# SITE_ADDRESS is your domain name; Caddy gets and renews its HTTPS certificate by itself.
+{$SITE_ADDRESS:localhost} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), geolocation=()"
+		Strict-Transport-Security "max-age=31536000"
+	}
+
+	@shell path /index.html /service-worker.js
+	header @shell Cache-Control "no-cache"
+
+	# /api/socket -> /socket on the API. Caddy overwrites X-Forwarded-For with the real client address,
+	# which the API reads (TRUST_PROXY=true).
+	handle_path /api/* {
+		reverse_proxy api:8080
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

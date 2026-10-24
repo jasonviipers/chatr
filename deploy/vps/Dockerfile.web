@@ -1,0 +1,17 @@
+# The web app, built once and served by Caddy (which also does HTTPS). Build context: the repository root.
+FROM oven/bun:1 AS build
+WORKDIR /app
+COPY app/package.json app/bun.lock ./
+RUN bun install --frozen-lockfile
+COPY app/ .
+# the address of the site is baked into the build (Vite reads these at build time)
+ARG REACT_APP_NAME=Chatr
+ARG REACT_APP_TAGLINE="Let’s start a meeting with your team."
+ARG REACT_APP_HOST
+ARG REACT_APP_API_HOST
+ENV REACT_APP_NAME=$REACT_APP_NAME REACT_APP_TAGLINE=$REACT_APP_TAGLINE REACT_APP_HOST=$REACT_APP_HOST REACT_APP_API_HOST=$REACT_APP_API_HOST
+RUN bun run build
+
+FROM caddy:2-alpine
+COPY deploy/vps/Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /app/build /srv

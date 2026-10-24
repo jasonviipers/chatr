@@ -1,0 +1,77 @@
+# Chatr on a server of your own: the web app + HTTPS (Caddy), the API, and optionally a TURN relay.
+#
+#   cp .env.example .env     # set DOMAIN and AUTH_SECRET
+#   docker compose up -d --build
+#
+# DOMAIN must already point at this server, and ports 80 and 443 must be open: Caddy then gets the certificate.
+name: chatr
+
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/vps/Dockerfile.web
+      args:
+        REACT_APP_NAME: ${APP_NAME:-Chatr}
+        REACT_APP_HOST: ${DOMAIN:?set DOMAIN in .env}
+        REACT_APP_API_HOST: ${DOMAIN}/api
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      SITE_ADDRESS: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
+  api:
+    build:
+      context: ../../api
+      dockerfile: .Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      TLS: "off" # Caddy terminates HTTPS
+      TRUST_PROXY: "true" # Caddy sets X-Forwarded-For
+      WEB_APP_HOST: ${DOMAIN}
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env (48+ random characters)}
+      DATABASE_PATH: /app/data/chatr.sqlite
+      STUN_URLS: ${STUN_URLS:-stun:stun.l.google.com:19302}
+      TURN_URLS: ${TURN_URLS:-}
+      TURN_SECRET: ${TURN_SECRET:-}
+    volumes:
+      - api-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Relay for participants who cannot reach each other directly (mobile carriers, strict firewalls). Optional:
+  #   docker compose --profile turn up -d
+  # with TURN_URLS=turn:<DOMAIN>:3478?transport=udp,turn:<DOMAIN>:3478?transport=tcp and a TURN_SECRET in .env.
+  coturn:
+    profiles: ["turn"]
+    image: coturn/coturn:latest
+    restart: unless-stopped
+    network_mode: host # relaying needs the real network interfaces
+    command:
+      - -n
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET:?set TURN_SECRET to run coturn}
+      - --realm=${DOMAIN}
+      - --fingerprint
+      - --no-cli
+      - --no-multicast-peers
+      - --min-port=49160
+      - --max-port=49200
+
+volumes:
+  api-data:
+  caddy-data:
+  caddy-config:
