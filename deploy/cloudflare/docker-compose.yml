@@ -1,8 +1,10 @@
-# The API for a Chatr whose web app is on Cloudflare Pages. It can run on any machine that has Docker (a VPS,
-# a home server): nothing needs to be opened to the internet, because the tunnel connects out to Cloudflare.
+# The API for a Chatr whose web app is on Cloudflare. It runs on any machine that has Docker (a VPS, a home server).
+# Pick how it becomes reachable over HTTPS:
 #
-#   cp .env.example .env     # set APP_HOST, AUTH_SECRET and TUNNEL_TOKEN
-#   docker compose up -d --build
+#   docker compose --profile direct up -d --build   # Caddy gets a certificate for API_HOST (ports 80 and 443 open)
+#   docker compose --profile tunnel up -d --build   # a Cloudflare Tunnel connects out (nothing to open)
+#
+# First:  cp .env.example .env   and fill it in.
 name: chatr-api
 
 services:
@@ -13,8 +15,8 @@ services:
     restart: unless-stopped
     environment:
       PORT: "8080"
-      TLS: "off" # Cloudflare terminates HTTPS
-      TRUST_PROXY: "true" # Cloudflare sets X-Forwarded-For
+      TLS: "off" # Caddy or Cloudflare terminates HTTPS
+      TRUST_PROXY: "true" # and sets X-Forwarded-For
       WEB_APP_HOST: ${APP_HOST:?set APP_HOST in .env}
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env (48+ random characters)}
       DATABASE_PATH: /app/data/chatr.sqlite
@@ -29,9 +31,28 @@ services:
       timeout: 5s
       retries: 3
 
-  # Connects this machine to Cloudflare. In the tunnel's settings, add a public hostname (for example
-  # chat-api.example.com) whose service is  http://api:8080
+  # --profile direct: HTTPS for API_HOST, certificate included. The DNS record of API_HOST must point at this machine
+  # ("DNS only", grey cloud) before it starts.
+  caddy:
+    profiles: ["direct"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    command: caddy reverse-proxy --from ${API_HOST:?set API_HOST in .env} --to api:8080
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
+  # --profile tunnel: connects this machine to Cloudflare. In the tunnel's settings, add a public hostname (API_HOST)
+  # whose service is  http://api:8080
   tunnel:
+    profiles: ["tunnel"]
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     depends_on:
@@ -39,7 +60,9 @@ services:
         condition: service_healthy
     command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
 
 volumes:
   api-data:
+  caddy-data:
+  caddy-config:

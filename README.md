@@ -83,7 +83,7 @@ The screenshots use made-up names and a drawn camera picture; to retake them, st
 
 Two ways, both with HTTPS (needed for cameras and microphones). The step-by-step guides are in [deploy/](deploy/README.md):
 
-- **Cloudflare:** the web app on Cloudflare Pages, the API on any machine with Docker through a Cloudflare Tunnel (nothing to
+- **Cloudflare:** the web app on Cloudflare (free static hosting), the API on any machine with Docker through a Cloudflare Tunnel (nothing to
   open on your network). [Guide](deploy/cloudflare/README.md)
 - **Your own server (VPS):** one `docker compose up` for the web app with automatic HTTPS, the API and, if you want, a
   TURN relay for strict networks. [Guide](deploy/vps/README.md)

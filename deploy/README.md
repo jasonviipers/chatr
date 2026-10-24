@@ -6,7 +6,7 @@ voice or the pictures. Pick where they live:
 
 | | Web app | API | Good for |
 | --- | --- | --- | --- |
-| [**Cloudflare**](cloudflare/README.md) | Cloudflare Pages | any machine with Docker, reached through a Cloudflare Tunnel (no open ports) | free hosting for the web app, a small or home server for the API |
+| [**Cloudflare**](cloudflare/README.md) | Cloudflare (static files, free) | any machine with Docker, reached through a Cloudflare Tunnel (no open ports) | free hosting for the web app, a small or home server for the API |
 | [**Your own server (VPS)**](vps/README.md) | Caddy, on the server | the same server | everything in one place, nothing depends on a provider |
 
 Both need the browser to reach the site over **HTTPS** (cameras and microphones are blocked otherwise). The API
