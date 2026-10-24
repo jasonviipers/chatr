@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "Chatr API: Hono + Drizzle + Better Auth + WebSocket gateway",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "packageManager": "bun@1.4.4",
   "main": "build/server.js",
