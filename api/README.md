@@ -11,6 +11,7 @@ One small Node process that serves everything the apps need:
 | Signalling | `/peer`: PeerJS-compatible WebRTC signalling (the browser keeps using `peerjs`) |
 | Chat | `/chat/<meetingId>` channel on the socket: text messages for people who cannot or do not want to use the microphone |
 | ICE | `/ice-servers`: STUN list plus short-lived TURN credentials |
+| Meeting lock | The host publishes `{locked}` on `/meetingLock/<meetingId>`. While locked, the gateway (`meeting_locked`) and the signalling server (`ERROR` "This meeting is locked") refuse everybody who was not already in the meeting, and `GET /meetings/<id>` answers `{locked}` so an invitation link can say so at once. Held in memory only (who is in the meeting is remembered as technical peer ids), forgotten 12 hours after the last change or when the server restarts |
 
 Calls stay peer to peer (WebRTC mesh): the server only introduces people, so one small VPS handles
 50-200 people online at the same time. A single meeting is bounded by the participants' uplinks

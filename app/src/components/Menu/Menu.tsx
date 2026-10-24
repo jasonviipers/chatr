@@ -19,6 +19,8 @@ interface MenuProps {
   canScreenShare: boolean;
   canWhiteboardEnable: boolean;
   canMemberRemove: boolean;
+  canLockMeeting: boolean;
+  meetingLocked: boolean;
   chatUnread: number;
   inviteText: string;
   isExpanded: boolean;
@@ -30,6 +32,7 @@ interface MenuProps {
   handleScreenShareClick: () => void;
   handleWhiteboardClick: () => void;
   handleMemberRemoveClick: () => void;
+  handleLockClick: () => void;
   handleToggleChange: MenuToggleHandleChange;
 }
 
@@ -101,6 +104,8 @@ export default class Menu extends Component<MenuProps, MenuLocalState> {
 					canScreenShare={this.props.canScreenShare}
 					canWhiteboardEnable={this.props.canWhiteboardEnable}
 					canMemberRemove={this.props.canMemberRemove}
+					canLockMeeting={this.props.canLockMeeting}
+					meetingLocked={this.props.meetingLocked}
 					chatUnread={this.props.chatUnread}
 					screenShareVisibility={this.screenShareVisibility}
 					handleInviteMemberClick={this.handleInviteMemberClick}
@@ -112,6 +117,7 @@ export default class Menu extends Component<MenuProps, MenuLocalState> {
 					handleScreenShareClick={this.props.handleScreenShareClick}
 					handleWhiteboardClick={this.props.handleWhiteboardClick}
 					handleMemberRemoveClick={this.props.handleMemberRemoveClick}
+					handleLockClick={this.props.handleLockClick}
 				/>
 			)
 		);

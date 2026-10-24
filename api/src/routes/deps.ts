@@ -3,6 +3,7 @@ import type { AccountService } from '../auth/service.ts';
 import type { Env } from '../config/env.ts';
 import type { Db } from '../db/client.ts';
 import type { CloudflareTurn } from '../lib/cloudflare-turn.ts';
+import type { MeetingRegistry } from '../realtime/meetings.ts';
 import type { LoginGuard, SlidingWindowLimiter } from '../lib/rate-limit.ts';
 
 export interface AppDeps {
@@ -16,6 +17,8 @@ export interface AppDeps {
   newPeerId: () => string;
   /** Relay credentials from Cloudflare Realtime TURN; null when it is not configured. */
   cloudflareTurn: CloudflareTurn | null;
+  /** Which meetings are locked (the gateway keeps it up to date). */
+  meetings: MeetingRegistry;
   limits: {
     /** Per-IP cap on sign-in / install requests. */
     authRequests: SlidingWindowLimiter;
@@ -23,5 +26,7 @@ export interface AppDeps {
     logins: LoginGuard;
     /** Per-IP cap on ICE credential requests. */
     ice: SlidingWindowLimiter;
+    /** Per-IP cap on "is this meeting locked?" requests. */
+    meetings: SlidingWindowLimiter;
   };
 }

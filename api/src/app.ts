@@ -16,8 +16,10 @@ import { adminRoutes } from './routes/admin.ts';
 import type { AppDeps } from './routes/deps.ts';
 import { hostRoutes } from './routes/host.ts';
 import { iceRoutes } from './routes/ice.ts';
+import { meetingRoutes } from './routes/meeting.ts';
 import { peerRoutes } from './routes/peer.ts';
 import { privacyRoutes } from './routes/privacy.ts';
+import { MeetingRegistry } from './realtime/meetings.ts';
 import { PeerRegistry } from './realtime/peers.ts';
 
 export interface CreateAppOptions {
@@ -30,6 +32,8 @@ export interface CreateAppOptions {
   log?: (line: string) => void;
   /** Replaces the Cloudflare relay credentials client built from the environment (tests). */
   cloudflareTurn?: CloudflareTurn | null;
+  /** The registry of locked meetings, shared with the gateway. */
+  meetings?: MeetingRegistry;
 }
 
 export function createApp(options: CreateAppOptions) {
@@ -55,10 +59,12 @@ export function createApp(options: CreateAppOptions) {
               ...(options.log ? { log: options.log } : {}),
             })
           : null,
+    meetings: options.meetings ?? new MeetingRegistry(),
     limits: {
       authRequests: new SlidingWindowLimiter(60_000, 30),
       logins: new LoginGuard(10 * 60_000, 8),
       ice: new SlidingWindowLimiter(60_000, 30),
+      meetings: new SlidingWindowLimiter(60_000, 60),
     },
   };
 
@@ -134,6 +140,7 @@ export function createApp(options: CreateAppOptions) {
     .route('/', hostRoutes(deps))
     .route('/', privacyRoutes(deps))
     .route('/', iceRoutes(deps))
+    .route('/', meetingRoutes(deps))
     .route('/', peerRoutes(deps));
 
   app.notFound((c) => c.json({ message: 'Not found' }, 404));
@@ -158,6 +165,7 @@ export function createApp(options: CreateAppOptions) {
     shutdown() {
       deps.limits.authRequests.stop();
       deps.limits.ice.stop();
+      deps.limits.meetings.stop();
     },
   });
 }

@@ -46,6 +46,7 @@ const app = createApp({
   auth,
   stats: () => gateway.stats(),
   newPeerId: () => gateway.peers.generateId(),
+  meetings: gateway.meetings,
   log,
 });
 

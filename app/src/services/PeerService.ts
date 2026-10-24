@@ -11,6 +11,7 @@ import SocketService from './SocketService';
 import { iceRestart } from './network/IceRestart';
 import { networkMonitor } from './network/NetworkMonitor';
 import { optimiseOpus } from './network/opus';
+import { LOCKED_NOTICE } from './MeetingStatusService';
 
 /** Delays before each re-dial of a call that dropped for good; the last one repeats. */
 const REDIAL_DELAYS_MS = [1_500, 3_000, 6_000, 12_000, 20_000, 30_000];
@@ -176,6 +177,12 @@ export default class PeerService {
     this.client.on('error', (error) => {
       const { type } = error;
       const message = this.getErrorMessage(type);
+      // the server refuses a call into a meeting that was locked after the page was opened
+      if (type === 'server-error' && /locked/i.test(error.message ?? '')) {
+        AlertService.push(LOCKED_NOTICE);
+        history.push(routes.home.path);
+        return;
+      }
       const transient = type === 'network' || type === 'server-error' || type === 'socket-error' || type === 'socket-closed';
       // Once the meeting is running, a flaky connection is retried (see keepSignallingAlive), not fatal
       if (this.opened && transient) return;

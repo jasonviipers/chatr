@@ -38,6 +38,8 @@ export interface MeetingState {
   calls: MediaConnection[];
   whiteboardDrawings: MeetingWhiteboardDrawingsState;
   whiteboardEnabled: boolean;
+  /** the host has locked the meeting: nobody new can join */
+  locked: boolean;
   menuExpanded: MenuExpandedState;
 }
 
@@ -58,6 +60,7 @@ export interface MeetingActions {
     whiteboardDrawings: MeetingWhiteboardDrawingsState,
   ) => AnyAction;
   replaceWhiteboardEnabled: (enabled: boolean) => AnyAction;
+  replaceLocked: (locked: boolean) => AnyAction;
   replaceVideoStreamMutedVideo: (
     connectionId: string,
     muted: boolean,
@@ -89,6 +92,7 @@ const meeting: MeetingState = {
   calls: [],
   whiteboardDrawings: [],
   whiteboardEnabled: false,
+  locked: false,
   menuExpanded: ['top', 'bottom'],
 };
 
@@ -129,6 +133,9 @@ export const actions: MeetingActions = {
   },
   replaceWhiteboardEnabled(enabled) {
     return { type: 'REPLACE_MEETING_WHITEBOARD_ENABLED', enabled };
+  },
+  replaceLocked(locked) {
+    return { type: 'REPLACE_MEETING_LOCKED', locked };
   },
   replaceVideoStreamMutedVideo(connectionId, muted) {
     const payload = { connectionId, muted };
@@ -223,6 +230,10 @@ export function reducers(state = meeting, action: any) {
       meeting.whiteboardEnabled = action.enabled;
       return cloneDeep(meeting);
     }
+    case 'REPLACE_MEETING_LOCKED': {
+      meeting.locked = action.locked;
+      return cloneDeep(meeting);
+    }
     case 'REPLACE_MEETING_VIDEO_STREAM_MUTED_VIDEO': {
       const { connectionId: id, muted } = action.payload;
       const video = find(meeting.videos, { id });
@@ -293,6 +304,7 @@ export function reducers(state = meeting, action: any) {
       meeting.id = '';
       meeting.connectionId = '';
       meeting.videos = [];
+      meeting.locked = false;
       meeting.menuExpanded = ['top', 'bottom'];
       return cloneDeep(meeting);
     }

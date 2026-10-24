@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { LOCKED_MESSAGE } from './meetings.ts';
 
 /**
  * WebRTC signalling that speaks the PeerJS wire protocol, replacing the `peer` server package.
@@ -70,6 +71,8 @@ export interface PeerRegistryOptions {
   /** A peer that sends nothing (not even a heartbeat) for this long is dropped. */
   aliveTimeoutMs?: number;
   now?: () => number;
+  /** True when a message from `src` to `dst` must not be passed on (a locked meeting that `src` is not part of). */
+  guard?: (src: string, dst: string) => boolean;
 }
 
 export class PeerRegistry {
@@ -78,11 +81,18 @@ export class PeerRegistry {
   private readonly expireMs: number;
   private readonly aliveTimeoutMs: number;
   private readonly now: () => number;
+  private guard: ((src: string, dst: string) => boolean) | undefined;
 
   constructor(options: PeerRegistryOptions = {}) {
     this.expireMs = options.expireMs ?? 5_000;
     this.aliveTimeoutMs = options.aliveTimeoutMs ?? 60_000;
     this.now = options.now ?? Date.now;
+    this.guard = options.guard;
+  }
+
+  /** Installs the rule that keeps strangers out of locked meetings (the gateway does this for the registry it was given). */
+  setGuard(guard: (src: string, dst: string) => boolean): void {
+    this.guard = guard;
   }
 
   get size(): number {
@@ -141,6 +151,15 @@ export class PeerRegistry {
       return;
     }
     if (message.dst === undefined) return;
+
+    if (message.type !== 'LEAVE' && this.guard?.(srcId, message.dst)) {
+      // Somebody trying to call into a locked meeting: nothing is passed on, and the caller is told why
+      if (message.type === 'OFFER')
+        src.socket.send(
+          JSON.stringify({ type: 'ERROR', payload: { msg: LOCKED_MESSAGE } }),
+        );
+      return;
+    }
 
     const outgoing: PeerMessage = {
       type: message.type,

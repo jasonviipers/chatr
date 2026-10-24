@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { micOffOutline, micOutline, videocamOffOutline, videocamOutline, handRightOutline } from 'ionicons/icons';
+import { micOffOutline, micOutline, videocamOffOutline, videocamOutline, handRightOutline, lockClosedOutline, lockOpenOutline } from 'ionicons/icons';
 import { describe, expect, it, vi } from 'vitest';
 import MenuItem from './MenuItem';
 import type { MenuItemProps } from './MenuItem';
@@ -62,5 +62,27 @@ describe('the other buttons', () => {
     expect(screen.getByText('3')).toBeTruthy();
     show({ name: 'chat', badge: 25 });
     expect(screen.getByText('9+')).toBeTruthy();
+  });
+});
+
+describe('the lock button', () => {
+  it('shows an open lock while the meeting is open, a closed one once the host has locked it', () => {
+    expect(iconOf(show({ name: 'lock', active: false }).container)).toBe(lockOpenOutline);
+    expect(iconOf(show({ name: 'lock', active: true }).container)).toBe(lockClosedOutline);
+  });
+
+  it('says what a click does: lock when open, unlock when locked', () => {
+    show({ name: 'lock', active: false });
+    expect(screen.getByLabelText('Lock meeting')).toBeTruthy();
+    show({ name: 'lock', active: true });
+    expect(screen.getByLabelText('Unlock meeting')).toBeTruthy();
+  });
+
+  it('can be clicked either way, and is not drawn for those who may not use it', () => {
+    const handleClick = vi.fn();
+    show({ name: 'lock', active: true, handleClick });
+    fireEvent.click(screen.getByRole('button'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+    expect(show({ name: 'lock', visibility: false }).container.firstChild).toBeNull();
   });
 });

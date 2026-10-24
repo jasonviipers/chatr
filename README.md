@@ -35,6 +35,10 @@ Meetings are voice first. Everybody who has no camera on is an avatar with a lab
 
 The buttons show their state: a slashed microphone or camera means it is off. Tap to switch.
 
+The host also has a padlock. **Lock meeting** keeps anybody new out (they are told the meeting is locked, and the
+servers refuse them even if they bypass the app) while the people already in keep talking; unlocking lets newcomers in
+again. The lock lives in the server's memory only, for as long as the meeting runs.
+
 ### Chat, whiteboard and screen sharing
 
 <table>

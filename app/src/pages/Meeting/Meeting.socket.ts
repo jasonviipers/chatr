@@ -8,6 +8,12 @@ import {
   VideoStateKind,
 } from './Meeting.state';
 
+/** What the server publishes when the host locks or unlocks the meeting (api/src/realtime/meetings.ts). */
+export interface MeetingLockPayload {
+  from: string;
+  locked: boolean;
+}
+
 interface RTPTrackReplacedPayload {
   connectionId: string;
   kind: VideoStateKind;
@@ -206,6 +212,27 @@ export default {
     },
     publish(meetingId: string, state: MediaState) {
       SocketService.publish(this.channel(meetingId), state);
+    },
+  },
+
+  meetingLock: {
+    channel(meetingId: string) {
+      return `/meetingLock/${meetingId}`;
+    },
+    subscribe(meetingId: string, callback: (state: MeetingLockPayload) => void) {
+      SocketService.subscribe(this.channel(meetingId), (state: MeetingLockPayload) =>
+        callback(state),
+      );
+    },
+    unsubscribe(meetingId: string) {
+      SocketService.unsubscribe(this.channel(meetingId));
+    },
+    publish(
+      meetingId: string,
+      state: { locked: boolean },
+      callbacks?: PublishCallbacks,
+    ) {
+      SocketService.publish(this.channel(meetingId), state, callbacks);
     },
   },
 

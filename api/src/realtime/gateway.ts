@@ -6,6 +6,11 @@ import { forwardedFor } from '../lib/http.ts';
 import { TokenBucket } from '../lib/rate-limit.ts';
 import { buildChatPayload } from './chat.ts';
 import { buildMediaStatePayload } from './media-state.ts';
+import {
+  buildMeetingLockPayload,
+  MEETING_CHANNEL_KINDS,
+  MeetingRegistry,
+} from './meetings.ts';
 import type { Connection } from './pubsub.ts';
 import { PubSub } from './pubsub.ts';
 import {
@@ -30,6 +35,7 @@ const CHANNEL_KINDS = new Set([
   'iceRestart',
   'chat',
   'mediaState',
+  'meetingLock',
 ]);
 const CHANNEL_PATTERN = /^\/([A-Za-z]{1,32})\/([A-Za-z0-9_-]{1,64})$/;
 const SESSION_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
@@ -46,12 +52,15 @@ export interface GatewayOptions {
   maxConnectionsPerIp: number;
   pubsub?: PubSub;
   peers?: PeerRegistry;
+  /** Which meetings are locked (shared with the REST routes); a fresh one when omitted. */
+  meetings?: MeetingRegistry;
   log?: (line: string) => void;
 }
 
 export interface Gateway {
   readonly pubsub: PubSub;
   readonly peers: PeerRegistry;
+  readonly meetings: MeetingRegistry;
   handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): void;
   stats(): Record<string, number>;
   close(): Promise<void>;
@@ -72,6 +81,9 @@ export function channelAllowed(
     case 'iceRestart': // renegotiation messages between two peers of a call
     case 'whiteboardDrawingSync':
       return action === 'subscribe' ? conn.peerId === id : conn.peerId !== null;
+    // only the host (whose verified peer id is the meeting id) may lock or unlock; everybody admitted may hear of it
+    case 'meetingLock':
+      return action === 'subscribe' || conn.peerId === id;
     // anyone in the meeting may read the chat, but only identified participants may write to it
     case 'chat':
     case 'mediaState': // who has the camera or the microphone on
@@ -103,6 +115,9 @@ export function rawToString(data: RawData): string {
 export function createGateway(options: GatewayOptions): Gateway {
   const pubsub = options.pubsub ?? new PubSub();
   const peers = options.peers ?? new PeerRegistry();
+  const meetings = options.meetings ?? new MeetingRegistry();
+  // strangers cannot call into a locked meeting, whatever app they use to try
+  peers.setGuard((src, dst) => meetings.blocks(src, dst));
   const log = options.log ?? (() => undefined);
 
   // Messages are small JSON; compression helps on slow links, no context takeover keeps memory per socket low
@@ -219,6 +234,11 @@ export function createGateway(options: GatewayOptions): Gateway {
           if (!channelAllowed(conn, channel.kind, channel.id, 'subscribe'))
             return reply({ t: 'err', code: 'forbidden', c: name });
           if (
+            MEETING_CHANNEL_KINDS.has(channel.kind) &&
+            !meetings.admits(channel.id, conn.peerId)
+          )
+            return reply({ t: 'err', code: 'meeting_locked', c: name });
+          if (
             !conn.channels.has(name) &&
             conn.channels.size >= MAX_CHANNELS_PER_CONNECTION
           )
@@ -230,6 +250,9 @@ export function createGateway(options: GatewayOptions): Gateway {
               ? message['since']
               : undefined;
           const result = pubsub.subscribe(conn, name, since);
+          // everybody who takes part subscribes to the state channel: that is how a meeting knows its members
+          if (channel.kind === 'mediaState' && conn.peerId !== null)
+            meetings.addMember(channel.id, conn.peerId);
           return reply({
             t: 'ok',
             c: name,
@@ -274,6 +297,11 @@ export function createGateway(options: GatewayOptions): Gateway {
               c: name,
               ...(messageId !== undefined ? { i: messageId } : {}),
             });
+          if (
+            MEETING_CHANNEL_KINDS.has(channel.kind) &&
+            !meetings.admits(channel.id, conn.peerId)
+          )
+            return refuse('meeting_locked');
 
           // who sent a renegotiation or chat message is stamped by the server, so it cannot be forged
           let payload: unknown;
@@ -289,9 +317,25 @@ export function createGateway(options: GatewayOptions): Gateway {
             const state = buildMediaStatePayload(conn.peerId, message['d']);
             if (state === null) return refuse('bad_message');
             payload = state;
+          } else if (channel.kind === 'meetingLock') {
+            if (!stateBucket.take()) return refuse('rate_limited');
+            const lock = buildMeetingLockPayload(conn.peerId, message['d']);
+            if (lock === null) return refuse('bad_message');
+            if (!meetings.setLocked(channel.id, lock.locked))
+              return refuse('too_many_meetings');
+            payload = lock;
           } else {
             payload = message['d'] ?? null;
           }
+          // a member who left or was removed by the host is a newcomer again (only the host may publish memberRemove)
+          if (channel.kind === 'memberRemove' && typeof payload === 'string')
+            meetings.forget(channel.id, payload);
+          if (
+            channel.kind === 'remoteDisconnect' &&
+            conn.peerId !== null &&
+            payload === conn.peerId
+          )
+            meetings.forget(channel.id, conn.peerId);
           pubsub.publish(name, payload, conn.sid, messageId);
           if (messageId !== undefined) reply({ t: 'a', i: messageId });
           return;
@@ -377,11 +421,14 @@ export function createGateway(options: GatewayOptions): Gateway {
   }, HEARTBEAT_MS);
   const pubsubSweep = setInterval(() => pubsub.sweep(), 30_000);
   const peerSweep = setInterval(() => peers.sweep(), 1_000);
-  for (const timer of [heartbeat, pubsubSweep, peerSweep]) timer.unref();
+  const meetingSweep = setInterval(() => meetings.sweep(), 10 * 60_000);
+  for (const timer of [heartbeat, pubsubSweep, peerSweep, meetingSweep])
+    timer.unref();
 
   return {
     pubsub,
     peers,
+    meetings,
 
     handleUpgrade(request, socket, head) {
       const origin = request.headers.origin;
@@ -427,6 +474,7 @@ export function createGateway(options: GatewayOptions): Gateway {
       clearInterval(heartbeat);
       clearInterval(pubsubSweep);
       clearInterval(peerSweep);
+      clearInterval(meetingSweep);
       for (const server of [appServer, peerServer]) {
         for (const ws of server.clients) ws.close(1001, 'server shutting down');
         await new Promise<void>((resolve) => server.close(() => resolve()));

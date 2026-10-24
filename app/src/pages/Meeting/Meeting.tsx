@@ -28,6 +28,7 @@ import { selectors as chatSelectors } from '../../components/Chat/Chat.state';
 import Chat from '../../components/Chat/Chat';
 import ChatService from '../../services/ChatService';
 import MediaStateService from '../../services/MediaStateService';
+import MeetingStatusService, { LOCKED_NOTICE } from '../../services/MeetingStatusService';
 import { camera } from '../../services/CameraService';
 import { callStream, pictureOf, settleCall } from '../../services/OutgoingMedia';
 import { hasPicture } from '../../components/Video/AudioOnly';
@@ -93,6 +94,7 @@ class Meeting extends Component<MeetingProps> {
 		this.handleMenuScreenShareClick = this.handleMenuScreenShareClick.bind(this);
 		this.handleMenuWhiteboardClick = this.handleMenuWhiteboardClick.bind(this);
 		this.handleMenuMemberRemoveClick = this.handleMenuMemberRemoveClick.bind(this);
+		this.handleMenuLockClick = this.handleMenuLockClick.bind(this);
 		this.handleMenuToggleChange = this.handleMenuToggleChange.bind(this);
 		this.handleVideoBlockClick = this.handleVideoBlockClick.bind(this);
 		this.handleWhiteboardCanvasClearClick = this.handleWhiteboardCanvasClearClick.bind(this);
@@ -154,6 +156,11 @@ class Meeting extends Component<MeetingProps> {
 
 	get canEndMeeting () {
 		return Boolean(this.props.id);
+	}
+
+	/** Only the host can lock the meeting (its peer id is the meeting id). */
+	get canLockMeeting () {
+		return Boolean(this.props.id) && this.props.id === this.props.connectionId;
 	}
 
 	/** Whether a picture is being sent: false for a voice-only meeting, so the camera button shows "off" */
@@ -304,6 +311,14 @@ class Meeting extends Component<MeetingProps> {
 		}
 	}
 
+	handleMenuLockClick () {
+		if (!this.canLockMeeting) return;
+		// the button follows what the server publishes back, so it always shows what is really the case
+		socket.meetingLock.publish(this.props.id, { locked: !this.props.locked }, {
+			onRejected: () => AlertService.push('The meeting could not be locked or unlocked. Try again.'),
+		});
+	}
+
 	handleMenuToggleChange (position: MenuPosition) {
 		const isMenuExpanded = this.isMenuExpanded(position);
 		const { pullMenuExpanded, pushMenuExpanded } = this.props;
@@ -372,6 +387,21 @@ class Meeting extends Component<MeetingProps> {
 		});
 	}
 
+	/**
+	 * Everybody hears when the host locks or unlocks (the host's own button follows it). The host also registers its
+	 * meeting with the server here, which is what makes a lock possible later on.
+	 */
+	handleRemoteMeetingLock (meetingId: string, isHost: boolean) {
+		socket.meetingLock.subscribe(meetingId, state => {
+			// the server tells a newcomer how things stand: say something only when that is a change
+			const changed = state.locked !== this.props.locked;
+			this.props.replaceLocked(state.locked);
+			if (isHost || !changed) return;
+			AlertService.push(state.locked ? 'The host locked the meeting: nobody new can join.' : 'The host unlocked the meeting.');
+		});
+		if (isHost) socket.meetingLock.publish(meetingId, { locked: false });
+	}
+
 	handleRemoteConferenceCall (meetingId: string, localStream: MediaStream) {
 		socket.conferenceCall.subscribe(meetingId, connectionId => {
 			this.notificationService.notifyMember(connectionId);
@@ -432,6 +462,8 @@ class Meeting extends Component<MeetingProps> {
       	canScreenShare={this.canScreenShare}
       	canWhiteboardEnable={this.canWhiteboardEnable}
       	canMemberRemove={this.activeVideo.memberRemove}
+      	canLockMeeting={this.canLockMeeting}
+      	meetingLocked={this.props.locked}
       	chatUnread={this.props.chatUnread}
       	inviteText={this.inviteText}
       	isExpanded={this.isMenuExpanded(position)}
@@ -443,6 +475,7 @@ class Meeting extends Component<MeetingProps> {
       	handleScreenShareClick={this.handleMenuScreenShareClick}
       	handleWhiteboardClick={this.handleMenuWhiteboardClick}
       	handleMemberRemoveClick={this.handleMenuMemberRemoveClick}
+      	handleLockClick={this.handleMenuLockClick}
       	handleToggleChange={this.handleMenuToggleChange}
       />;
 	}
@@ -465,6 +498,7 @@ class Meeting extends Component<MeetingProps> {
 		socket.raiseHand.unsubscribe(id);
 		socket.chat.unsubscribe(id);
 		socket.mediaState.unsubscribe(id);
+		socket.meetingLock.unsubscribe(id);
 		socket.conferenceCall.unsubscribe(id);
 		socket.rtpTrackReplaced.unsubscribe(id);
 		socket.remoteDisconnect.unsubscribe(id);
@@ -559,11 +593,19 @@ class Meeting extends Component<MeetingProps> {
 
 	joinMeeting (meetingId: string, localConnectionId: string, localStream: MediaStream) {
 		if (this.meetingService.isMemberMeeting(localConnectionId)) {
-			this.peerService.call(meetingId, localStream, call => {
-				this.meetingService.pushCall(call);
-				this.handleCallStreaming(call);
-				this.settleVideo(call);
-			}, this.outgoingStream(localStream));
+			// a locked meeting says so at once, instead of a call that is never answered
+			void MeetingStatusService.isLocked(meetingId).then(locked => {
+				if (locked) {
+					AlertService.push(LOCKED_NOTICE);
+					this.exitMeeting();
+					return;
+				}
+				this.peerService.call(meetingId, localStream, call => {
+					this.meetingService.pushCall(call);
+					this.handleCallStreaming(call);
+					this.settleVideo(call);
+				}, this.outgoingStream(localStream));
+			});
 		}
 	}
 
@@ -582,6 +624,7 @@ class Meeting extends Component<MeetingProps> {
 					this.handleRemoteRaiseHand(meetingId);
 					this.handleRemoteChat(meetingId);
 					this.handleRemoteMediaState(meetingId);
+					this.handleRemoteMeetingLock(meetingId, this.meetingService.isHostMeeting(localConnectionId));
 					this.handleRemoteMemberRemove(meetingId);
 					this.handleDisconnect();
 					this.mediaService.getStream(history, localStream => {

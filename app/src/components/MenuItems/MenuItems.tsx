@@ -14,6 +14,8 @@ interface MenuItemsProps {
   canScreenShare: boolean
   canWhiteboardEnable: boolean
   canMemberRemove: boolean
+  canLockMeeting: boolean
+  meetingLocked: boolean
   chatUnread: number
   screenShareVisibility: boolean
   handleInviteMemberClick: () => void
@@ -25,6 +27,7 @@ interface MenuItemsProps {
   handleScreenShareClick: () => void
   handleWhiteboardClick: () => void
   handleMemberRemoveClick: () => void
+  handleLockClick: () => void
 }
 
 type Items = Record<MenuPosition, MenuItemProps[]>
@@ -50,6 +53,12 @@ export default class MenuItems extends Component<MenuItemsProps> {
 					active: true,
 					visibility: this.props.canMemberRemove,
 					handleClick: this.props.handleMemberRemoveClick
+				},
+				{
+					name: 'lock',
+					active: this.props.meetingLocked,
+					visibility: this.props.canLockMeeting,
+					handleClick: this.props.handleLockClick
 				}
 			],
 			bottom: [
