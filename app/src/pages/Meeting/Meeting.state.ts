@@ -24,6 +24,8 @@ export interface VideoState {
   active: boolean;
   muted: boolean;
   streamMuted: VideoStateStreamMuted;
+  /** the name this participant chose for the meeting (absent: they chose none) */
+  name?: string;
   renderId: string;
 }
 
@@ -64,6 +66,7 @@ export interface MeetingActions {
     connectionId: string,
     muted: boolean,
   ) => AnyAction;
+  replaceVideoName: (connectionId: string, name: string | undefined) => AnyAction;
   updateVideoRenderId: (connectionId: string) => AnyAction;
   pushVideo: (video: VideoState) => AnyAction;
   pushCall: (call: MediaConnection) => AnyAction;
@@ -134,6 +137,10 @@ export const actions: MeetingActions = {
   replaceVideoStreamMutedAudio(connectionId, muted) {
     const payload = { connectionId, muted };
     return { type: 'REPLACE_MEETING_VIDEO_STREAM_MUTED_AUDIO', payload };
+  },
+  replaceVideoName(connectionId, name) {
+    const payload = { connectionId, name };
+    return { type: 'REPLACE_MEETING_VIDEO_NAME', payload };
   },
   updateVideoRenderId(connectionId) {
     return { type: 'UPDATE_MEETING_VIDEO_RENDER_ID', connectionId };
@@ -226,6 +233,15 @@ export function reducers(state = meeting, action: any) {
       const { connectionId: id, muted } = action.payload;
       const video = find(meeting.videos, { id });
       if (video) video.streamMuted.audio = muted;
+      return cloneDeep(meeting);
+    }
+    case 'REPLACE_MEETING_VIDEO_NAME': {
+      const { connectionId: id, name } = action.payload;
+      const video = find(meeting.videos, { id });
+      if (video) {
+        if (name) video.name = name;
+        else delete video.name;
+      }
       return cloneDeep(meeting);
     }
     case 'UPDATE_MEETING_VIDEO_RENDER_ID': {

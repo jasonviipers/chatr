@@ -16,6 +16,18 @@ describe('senderLabel', () => {
     expect(senderLabel('qwe-12_rt', 'me', 'host')).toBe('Participant 12RT');
   });
 
+  it('uses the name somebody chose, and marks the host', () => {
+    const names: Record<string, string> = { guest1: 'Bob Chen', host99: 'Alice' };
+    const nameOf = (id: string) => names[id];
+    expect(senderLabel('guest1', 'me', 'host99', nameOf)).toBe('Bob Chen');
+    expect(senderLabel('host99', 'me', 'host99', nameOf)).toBe('Alice (Host)');
+    // a guest who chose no name keeps the short tag, the host who chose none stays "Host"
+    expect(senderLabel('abcd-wxyz', 'me', 'host99', nameOf)).toBe('Participant WXYZ');
+    expect(senderLabel('host99', 'me', 'host99', () => undefined)).toBe('Host');
+    // you are "You" even if you named yourself
+    expect(senderLabel('me', 'me', 'host99', () => 'Myself')).toBe('You');
+  });
+
   it('tells guests apart by the end of their id', () => {
     expect(senderLabel('abcd-wxyz', 'me', 'host')).toBe('Participant WXYZ');
     expect(senderLabel('abcd-wxyz', 'me', 'host')).not.toBe(senderLabel('abcd-1234', 'me', 'host'));

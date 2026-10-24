@@ -23,7 +23,7 @@ meetings.
 ### In a meeting
 
 Meetings are voice first. Everybody who has no camera on is an avatar with a label (**You**, **Host** or
-**Participant**), never a black square. Calls go directly between the participants, so nothing is recorded or stored on the server.
+**Participant**, or the name they typed before joining: it is optional), never a black square. Calls go directly between the participants, so nothing is recorded or stored on the server.
 
 <table>
 <tr>

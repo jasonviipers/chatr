@@ -9,6 +9,7 @@ import AlertService from '../../services/AlertService'
 import { actions, selectors, JoinState, JoinActions } from './Join.state'
 import Page from '../../components/Page/Page'
 import Input from '../../components/Input/Input'
+import DisplayNameInput from '../../components/DisplayNameInput/DisplayNameInput'
 import Button from '../../components/Button/Button'
 
 interface JoinProps extends JoinActions, JoinState, RouteComponentProps {}
@@ -71,6 +72,7 @@ class Join extends Component<JoinProps> {
                     value={this.props.meetingId}
                     placeholder="Meeting ID"
                     handleChange={this.handleInputChange} />
+                  <DisplayNameInput />
                   <Button
                     text="Join Meeting"
                     handleClick={this.handleJoinClick} />

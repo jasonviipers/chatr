@@ -7,6 +7,7 @@ interface InputProps {
   value: string
   placeholder: string
   handleChange: (event: ChangeEvent) => void
+  maxLength?: number
 }
 
 export default class Input extends Component<InputProps> {
@@ -19,6 +20,7 @@ export default class Input extends Component<InputProps> {
         value={this.props.value}
         placeholder={this.props.placeholder}
         onChange={this.props.handleChange}
+        maxLength={this.props.maxLength}
         autoComplete="off" />
     )
   }

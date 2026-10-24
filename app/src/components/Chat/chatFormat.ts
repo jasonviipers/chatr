@@ -1,6 +1,16 @@
-/** Who a chat message is from, in words. Meetings are anonymous, so the last characters of the id tell guests apart. */
-export function senderLabel(from: string, myId: string, hostId: string): string {
+/**
+ * Who a chat message is from, in words: the name the sender chose for the meeting, if any. Otherwise the last
+ * characters of the id tell guests apart (meetings are anonymous). The host is marked as such either way.
+ */
+export function senderLabel(
+  from: string,
+  myId: string,
+  hostId: string,
+  nameOf?: (id: string) => string | undefined,
+): string {
   if (from === myId) return 'You';
+  const name = nameOf?.(from);
+  if (name) return from === hostId ? `${name} (Host)` : name;
   if (from === hostId) return 'Host';
   // ids are base64url: keep letters and digits so the tag reads cleanly (not "Participant -10K")
   return `Participant ${from.replace(/[^A-Za-z0-9]/g, '').slice(-4).toUpperCase()}`;

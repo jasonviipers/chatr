@@ -18,10 +18,15 @@ export function hasPicture(video: Pick<VideoState, 'stream' | 'streamMuted' | 'k
   return video.stream.getVideoTracks().some((track) => track.readyState === 'live');
 }
 
-/** Who a tile belongs to, in words: Chatr meetings are anonymous, so this is all there is to tell people apart. */
-export function tileLabel(video: Pick<VideoState, 'id' | 'muted'>, isHost: (id: string) => boolean): string {
+/**
+ * Who a tile belongs to, in words: the name the person chose for the meeting if they chose one, otherwise just
+ * their role (Chatr meetings are anonymous, nobody has to give a name). The host is marked as such either way.
+ */
+export function tileLabel(video: Pick<VideoState, 'id' | 'muted' | 'name'>, isHost: (id: string) => boolean): string {
   if (video.muted) return 'You'; // the local tile is the one played muted
-  return isHost(video.id) ? 'Host' : 'Participant';
+  const host = isHost(video.id);
+  if (video.name) return host ? `${video.name} (Host)` : video.name;
+  return host ? 'Host' : 'Participant';
 }
 
 /**

@@ -7,6 +7,7 @@ import Request from './Start.request'
 import { actions, selectors, StartState, StartActions } from './Start.state'
 import Page from '../../components/Page/Page'
 import Input from '../../components/Input/Input'
+import DisplayNameInput from '../../components/DisplayNameInput/DisplayNameInput'
 import Button from '../../components/Button/Button'
 
 interface StartProps extends StartState, StartActions, RouteComponentProps {}
@@ -74,6 +75,7 @@ class Start extends Component<StartProps> {
                     value={this.props.password}
                     placeholder="Password"
                     handleChange={this.handleInputChange} />
+                  <DisplayNameInput />
                   <Button
                     text="Start Meeting"
                     handleClick={this.handleStartClick} />

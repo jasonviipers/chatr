@@ -2,6 +2,7 @@ import { IonIcon, isPlatform } from '@ionic/react';
 import { closeOutline, sendOutline } from 'ionicons/icons';
 import React, { ChangeEvent, Component, KeyboardEvent, FormEvent } from 'react';
 import { connect } from 'react-redux';
+import MediaStateService from '../../services/MediaStateService';
 import { selectors, ChatMessage, ChatState } from './Chat.state';
 import { formatTime, senderHue, senderLabel } from './chatFormat';
 import styles from './Chat.module.scss';
@@ -27,6 +28,7 @@ interface ChatLocalState {
 }
 
 export class Chat extends Component<ChatProps, ChatLocalState> {
+  private readonly mediaState = new MediaStateService();
   private list: HTMLDivElement | null = null;
   private input: HTMLTextAreaElement | null = null;
   /** whether the list is scrolled to the end, so new messages follow along but reading older ones is not interrupted */
@@ -114,7 +116,7 @@ export class Chat extends Component<ChatProps, ChatLocalState> {
 
   private renderMessage(message: ChatMessage) {
     const { myId, hostId } = this.props;
-    const label = senderLabel(message.from, myId, hostId);
+    const label = senderLabel(message.from, myId, hostId, (id) => this.mediaState.nameOf(id));
     const style = message.mine ? undefined : { color: `hsl(${senderHue(message.from)} 70% 72%)` };
     return (
       <li key={message.id} className={`${styles.message} ${message.mine ? styles.mine : ''}`}>

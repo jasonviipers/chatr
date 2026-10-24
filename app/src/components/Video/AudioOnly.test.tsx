@@ -72,6 +72,14 @@ describe('tileLabel', () => {
     expect(tileLabel({ id: 'host-id', muted: false }, host)).toBe('Host');
     expect(tileLabel({ id: 'someone', muted: false }, host)).toBe('Participant');
   });
+
+  it('shows the name a person chose, and still marks the host', () => {
+    const host = (id: string) => id === 'host-id';
+    expect(tileLabel({ id: 'someone', muted: false, name: 'Bob Chen' }, host)).toBe('Bob Chen');
+    expect(tileLabel({ id: 'host-id', muted: false, name: 'Alice' }, host)).toBe('Alice (Host)');
+    // your own tile is always "You", whatever you called yourself
+    expect(tileLabel({ id: 'me', muted: true, name: 'Me Myself' }, host)).toBe('You');
+  });
 });
 
 describe('AudioOnly', () => {

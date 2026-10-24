@@ -53,6 +53,7 @@ export default class VideoService {
         video: !announced?.video,
         audio: announced ? !announced.audio : false,
       },
+      ...(announced?.name ? { name: announced.name } : {}),
       renderId: nanoid(),
     };
     callback(video);

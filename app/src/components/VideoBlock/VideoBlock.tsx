@@ -39,7 +39,7 @@ export default class VideoBlock extends Component<VideoBlockProps> {
         <div className={styles.content}>
           <Video video={this.props.video} />
           <AudioOnly video={this.props.video} />
-          <MuteBadge muted={this.props.video.streamMuted.audio} who={this.props.video.muted ? 'You' : 'Participant'} />
+          <MuteBadge muted={this.props.video.streamMuted.audio} who={this.props.video.muted ? 'You' : this.props.video.name ?? 'Participant'} />
           <RaiseHand visibility={this.props.video.raiseHand} />
         </div>
       </div>
