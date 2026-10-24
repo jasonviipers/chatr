@@ -9,6 +9,7 @@ import { createAccountService } from './auth/service.ts';
 import type { Env } from './config/env.ts';
 import type { Db } from './db/client.ts';
 import type { AppEnv } from './lib/http.ts';
+import { CloudflareTurn } from './lib/cloudflare-turn.ts';
 import { clientIp, fail } from './lib/http.ts';
 import { LoginGuard, SlidingWindowLimiter } from './lib/rate-limit.ts';
 import { adminRoutes } from './routes/admin.ts';
@@ -27,6 +28,8 @@ export interface CreateAppOptions {
   newPeerId?: () => string;
   /** Request log line sink; omitted in tests. */
   log?: (line: string) => void;
+  /** Replaces the Cloudflare relay credentials client built from the environment (tests). */
+  cloudflareTurn?: CloudflareTurn | null;
 }
 
 export function createApp(options: CreateAppOptions) {
@@ -40,6 +43,18 @@ export function createApp(options: CreateAppOptions) {
     accounts,
     stats: options.stats ?? (() => ({})),
     newPeerId: options.newPeerId ?? (() => new PeerRegistry().generateId()),
+    cloudflareTurn:
+      options.cloudflareTurn !== undefined
+        ? options.cloudflareTurn
+        : env.CLOUDFLARE_TURN_KEY_ID && env.CLOUDFLARE_TURN_API_TOKEN
+          ? new CloudflareTurn({
+              keyId: env.CLOUDFLARE_TURN_KEY_ID,
+              apiToken: env.CLOUDFLARE_TURN_API_TOKEN,
+              baseUrl: env.CLOUDFLARE_TURN_API_URL,
+              ttlSeconds: env.CLOUDFLARE_TURN_TTL_SECONDS,
+              ...(options.log ? { log: options.log } : {}),
+            })
+          : null,
     limits: {
       authRequests: new SlidingWindowLimiter(60_000, 30),
       logins: new LoginGuard(10 * 60_000, 8),

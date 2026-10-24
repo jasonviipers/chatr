@@ -18,7 +18,10 @@ One machine with Docker runs everything: **Caddy** (serves the web app and gets 
 
 Updating: `git pull && docker compose up -d --build`. The database lives in the `api-data` volume.
 
-## TURN relay (optional, for strict networks)
+## Relay for strict networks (optional)
+
+The simplest is Cloudflare Realtime TURN: create a key in the Cloudflare dashboard (*Realtime → TURN Server*) and put its id
+and token in `.env` as `CLOUDFLARE_TURN_KEY_ID` and `CLOUDFLARE_TURN_API_TOKEN`, then `docker compose up -d`. Or run your own:
 
 Set `TURN_SECRET` (random) and `TURN_URLS=turn:<your domain>:3478?transport=udp,turn:<your domain>:3478?transport=tcp`
 in `.env`, open UDP/TCP 3478 and UDP 49160–49200, then start it:

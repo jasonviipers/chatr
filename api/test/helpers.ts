@@ -7,7 +7,10 @@ import { runMigrations } from '../src/db/migrate.ts';
 
 export const ORIGIN = 'https://app.example.test';
 
-export function createTestApp(overrides: Record<string, string> = {}) {
+export function createTestApp(
+  overrides: Record<string, string> = {},
+  appOptions: Partial<Parameters<typeof createApp>[0]> = {},
+) {
   const env: Env = loadEnv({
     NODE_ENV: 'test',
     DATABASE_PATH: ':memory:',
@@ -18,7 +21,7 @@ export function createTestApp(overrides: Record<string, string> = {}) {
   const database = createDb(':memory:');
   runMigrations(database.db);
   const auth = createAuth({ db: database.db, env, secureCookies: true });
-  const app = createApp({ env, db: database.db, auth });
+  const app = createApp({ env, db: database.db, auth, ...appOptions });
   return { app, auth, env, ...database };
 }
 

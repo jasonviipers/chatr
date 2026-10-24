@@ -22,7 +22,8 @@ cannot run on Cloudflare Workers as it is: it keeps a database file and long-liv
 | API | `WEB_APP_HOST` | the one origin allowed to talk to the API |
 | API | `AUTH_SECRET` | signs the session tokens (48+ random characters, keep it) |
 | API | `TRUST_PROXY` | `true` behind a proxy you control (both setups) |
-| API | `TURN_URLS`, `TURN_SECRET` | optional relay for strict networks, see below |
+| API | `CLOUDFLARE_TURN_KEY_ID`, `CLOUDFLARE_TURN_API_TOKEN` | optional relay from Cloudflare, nothing to run, see below |
+| API | `TURN_URLS`, `TURN_SECRET` | optional relay of your own (coturn), see below |
 
 The complete list is in [`api/.env.example`](../api/.env.example).
 
@@ -34,9 +35,13 @@ administrator then creates the hosts, who are the people allowed to start meetin
 ## Strict networks (TURN)
 
 Most calls connect directly through STUN. Participants behind mobile carriers or corporate firewalls need a relay
-(TURN). The VPS setup includes one (`docker compose --profile turn up -d`, see [vps/README.md](vps/README.md)); it
-needs a machine with a public IP address and open UDP/TCP ports, so it cannot run behind a Cloudflare Tunnel. You can
-run it on a separate small server and point `TURN_URLS`/`TURN_SECRET` of the API at it.
+(TURN). Two options, which can be used together:
+
+- **Cloudflare Realtime TURN (recommended, works with every setup):** nothing to run. Create a TURN key in the Cloudflare
+  dashboard (*Realtime → TURN Server*) and put its id and token in `CLOUDFLARE_TURN_KEY_ID` and
+  `CLOUDFLARE_TURN_API_TOKEN` of the API. Details and pricing notes in [../api/README.md](../api/README.md#turn-recommended-for-mobile-users-and-strict-firewalls).
+- **Your own coturn:** the VPS setup includes one (`docker compose --profile turn up -d`, see [vps/README.md](vps/README.md));
+  it needs a machine with a public IP address and open UDP/TCP ports, so it cannot run behind a Cloudflare Tunnel.
 
 ## Backups
 

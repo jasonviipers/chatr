@@ -50,6 +50,24 @@ const schema = z.object({
   /** Shared secret of coturn (`use-auth-secret`); credentials are time limited. */
   TURN_SECRET: z.string().min(16).optional(),
   TURN_TTL_SECONDS: z.coerce.number().int().min(60).default(3600),
+  /**
+   * Cloudflare Realtime TURN (https://developers.cloudflare.com/realtime/turn/): create a TURN key in the
+   * dashboard and put its id and API token here. Both or neither. It can be used next to coturn.
+   */
+  CLOUDFLARE_TURN_KEY_ID: z.string().min(1).optional(),
+  CLOUDFLARE_TURN_API_TOKEN: z.string().min(1).optional(),
+  /** How long the relay credentials last. It must outlast the longest meeting; Cloudflare allows up to 48 hours. */
+  CLOUDFLARE_TURN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(600)
+    .max(172_800)
+    .default(86_400),
+  /** Only changed in tests. */
+  CLOUDFLARE_TURN_API_URL: z
+    .url()
+    .transform((url) => url.replace(/\/+$/, ''))
+    .default('https://rtc.live.cloudflare.com'),
 
   MAX_CONNECTIONS: z.coerce.number().int().min(1).default(2000),
   MAX_CONNECTIONS_PER_IP: z.coerce.number().int().min(1).default(60),
@@ -94,6 +112,17 @@ export function loadEnv(
   if (env.NODE_ENV === 'production' && !env.AUTH_SECRET) {
     throw new Error(
       'Invalid environment:\n  AUTH_SECRET: required in production (min 32 characters)',
+    );
+  }
+  if (
+    Boolean(env.CLOUDFLARE_TURN_KEY_ID) !==
+    Boolean(env.CLOUDFLARE_TURN_API_TOKEN)
+  ) {
+    const missing = env.CLOUDFLARE_TURN_KEY_ID
+      ? 'CLOUDFLARE_TURN_API_TOKEN'
+      : 'CLOUDFLARE_TURN_KEY_ID';
+    throw new Error(
+      `Invalid environment:\n  ${missing}: required together with the other CLOUDFLARE_TURN_* key setting`,
     );
   }
   const authSecret = env.AUTH_SECRET ?? randomBytes(32).toString('base64url');

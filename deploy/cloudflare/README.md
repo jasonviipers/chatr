@@ -45,5 +45,6 @@ Run the script again whenever the app changes; the API is updated with `docker c
 - Nothing but the API is stored, in the `api-data` volume on that machine: back it up (see [../README.md](../README.md)).
 - Caddy (direct) or Cloudflare (tunnel) terminates HTTPS and passes the visitor's address on; the API uses it for its
   rate limits (`TRUST_PROXY=true` is already set).
-- WebRTC media does not go through Cloudflare. For participants on strict networks add a TURN relay on a machine with
-  a public address (see [../README.md](../README.md)).
+- WebRTC media does not go through Cloudflare unless a relay is needed. For participants on strict networks add
+  Cloudflare Realtime TURN: create a key in the dashboard and set `CLOUDFLARE_TURN_KEY_ID` and `CLOUDFLARE_TURN_API_TOKEN`
+  in `.env` (see [../README.md](../README.md#strict-networks-turn)).

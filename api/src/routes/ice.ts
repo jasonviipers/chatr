@@ -39,13 +39,23 @@ export function buildIceServers(
 }
 
 export function iceRoutes(deps: AppDeps) {
-  return new Hono<AppEnv>().get('/ice-servers', (c) => {
+  return new Hono<AppEnv>().get('/ice-servers', async (c) => {
     const limited = deps.limits.ice.hit(clientIp(c, deps.env.TRUST_PROXY));
     if (!limited.allowed)
       fail(429, 'Too many requests. Try again later.', {
         'retry-after': String(limited.retryAfterSeconds),
       });
     c.header('cache-control', 'no-store');
-    return c.json(buildIceServers(deps.env));
+
+    const own = buildIceServers(deps.env);
+    // Cloudflare's relay is added when it is configured and answering; otherwise the clients still get STUN
+    // (and coturn, if that is configured), so a Cloudflare problem never takes calls down.
+    const cloudflare = await deps.cloudflareTurn?.get();
+    if (!cloudflare) return c.json(own);
+    const usesCoturn = own.iceServers.length > 1;
+    return c.json({
+      iceServers: [...own.iceServers, ...cloudflare.iceServers],
+      ttl: usesCoturn ? Math.min(own.ttl, cloudflare.ttl) : cloudflare.ttl,
+    });
   });
 }

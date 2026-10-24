@@ -64,7 +64,8 @@ certificate locally; it refuses to start when the files are missing.
 | `TLS`, `TLS_KEY_PATH`, `TLS_CERT_PATH` | `auto`, `./ssl/key.pem`, `./ssl/cert.pem` | `auto`: HTTP in development, HTTPS in production when the files exist. `on` / `off` force it. Production means `NODE_ENV=production` (set by `bun run start` and the Docker image) |
 | `TRUST_PROXY` | `false` | `true` only behind a proxy you control that **sets** `X-Forwarded-For` (the last entry is used, see `nginx.conf`) |
 | `STUN_URLS` | Google STUN | comma separated |
-| `TURN_URLS`, `TURN_SECRET`, `TURN_TTL_SECONDS` | | relay for networks where a direct path is impossible, see below |
+| `CLOUDFLARE_TURN_KEY_ID`, `CLOUDFLARE_TURN_API_TOKEN`, `CLOUDFLARE_TURN_TTL_SECONDS` | `86400` | relay from Cloudflare Realtime TURN (no server to run), see below. Both the id and the token or neither |
+| `TURN_URLS`, `TURN_SECRET`, `TURN_TTL_SECONDS` | | relay of your own (coturn) for networks where a direct path is impossible, see below |
 | `MAX_CONNECTIONS`, `MAX_CONNECTIONS_PER_IP` | `2000`, `60` | caps on open sockets |
 
 ## Security notes
@@ -110,7 +111,29 @@ the call then dials again (after 1.5 s, then 3, 6, 12, 20 and every 30 s) until 
 
 ### TURN (recommended for mobile users and strict firewalls)
 
-Without a relay, people behind symmetric NATs or carrier-grade NAT cannot connect. Run [coturn](https://github.com/coturn/coturn)
+Without a relay, people behind symmetric NATs or carrier-grade NAT cannot connect. Two ways to have one; they can also
+be used together.
+
+**Cloudflare Realtime TURN: nothing to run.** In the Cloudflare dashboard open *Realtime → TURN Server* and create a
+key. It shows a **key id** and an **API token** (once): give them to the API.
+
+```bash
+# api/.env
+CLOUDFLARE_TURN_KEY_ID=<the key id>
+CLOUDFLARE_TURN_API_TOKEN=<the API token>
+# optional: how long the credentials last, 600 to 172800 seconds; it must be longer than your longest meeting
+CLOUDFLARE_TURN_TTL_SECONDS=86400
+```
+
+The token stays on the server: the API asks Cloudflare for a username and credential that expire by themselves and
+hands only those to the browsers (`/ice-servers`). One set is shared by everybody until half of its life is over, so
+Cloudflare is asked rarely, and if Cloudflare cannot be reached the last set keeps being served and then the clients
+simply get STUN only (calls that do not need a relay are not affected; the problem is written to the log).
+Cloudflare charges for the data the relay sends (check
+[their current pricing](https://developers.cloudflare.com/realtime/turn/faq/); at the time of writing the first 1,000 GB
+a month are free). You may also set `STUN_URLS=stun:stun.cloudflare.com:3478` to use Cloudflare's STUN as well.
+
+**Your own relay.** Run [coturn](https://github.com/coturn/coturn)
 with a shared secret and give the API the same one:
 
 ```bash
