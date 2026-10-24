@@ -29,6 +29,7 @@ import Chat from '../../components/Chat/Chat';
 import ChatService from '../../services/ChatService';
 import MediaStateService from '../../services/MediaStateService';
 import MeetingStatusService, { LOCKED_NOTICE } from '../../services/MeetingStatusService';
+import NoiseSuppressionService from '../../services/NoiseSuppressionService';
 import { camera } from '../../services/CameraService';
 import { callStream, pictureOf, settleCall } from '../../services/OutgoingMedia';
 import { hasPicture } from '../../components/Video/AudioOnly';
@@ -95,6 +96,7 @@ class Meeting extends Component<MeetingProps> {
 		this.handleMenuWhiteboardClick = this.handleMenuWhiteboardClick.bind(this);
 		this.handleMenuMemberRemoveClick = this.handleMenuMemberRemoveClick.bind(this);
 		this.handleMenuLockClick = this.handleMenuLockClick.bind(this);
+		this.handleMenuNoiseClick = this.handleMenuNoiseClick.bind(this);
 		this.handleMenuToggleChange = this.handleMenuToggleChange.bind(this);
 		this.handleVideoBlockClick = this.handleVideoBlockClick.bind(this);
 		this.handleWhiteboardCanvasClearClick = this.handleWhiteboardCanvasClearClick.bind(this);
@@ -319,6 +321,14 @@ class Meeting extends Component<MeetingProps> {
 		});
 	}
 
+	/** Cleaning the microphone of background noise: on or off at once, and remembered on this device. */
+	handleMenuNoiseClick () {
+		const on = !this.props.noiseSuppression;
+		const result = NoiseSuppressionService.set(on);
+		this.props.replaceNoiseSuppression(on);
+		if (result === 'next-meeting') AlertService.push('Noise reduction will be on from your next meeting.');
+	}
+
 	handleMenuToggleChange (position: MenuPosition) {
 		const isMenuExpanded = this.isMenuExpanded(position);
 		const { pullMenuExpanded, pushMenuExpanded } = this.props;
@@ -464,6 +474,8 @@ class Meeting extends Component<MeetingProps> {
       	canMemberRemove={this.activeVideo.memberRemove}
       	canLockMeeting={this.canLockMeeting}
       	meetingLocked={this.props.locked}
+      	canReduceNoise={NoiseSuppressionService.supported}
+      	noiseReduced={this.props.noiseSuppression}
       	chatUnread={this.props.chatUnread}
       	inviteText={this.inviteText}
       	isExpanded={this.isMenuExpanded(position)}
@@ -476,6 +488,7 @@ class Meeting extends Component<MeetingProps> {
       	handleWhiteboardClick={this.handleMenuWhiteboardClick}
       	handleMemberRemoveClick={this.handleMenuMemberRemoveClick}
       	handleLockClick={this.handleMenuLockClick}
+      	handleNoiseClick={this.handleMenuNoiseClick}
       	handleToggleChange={this.handleMenuToggleChange}
       />;
 	}
@@ -628,6 +641,7 @@ class Meeting extends Component<MeetingProps> {
 					this.handleRemoteMemberRemove(meetingId);
 					this.handleDisconnect();
 					this.mediaService.getStream(history, localStream => {
+						this.props.replaceNoiseSuppression(NoiseSuppressionService.enabled);
 						this.handleUserStream(localConnectionId, localStream);
 						this.handleReceiveCall(meetingId, localStream);
 						this.joinMeeting(meetingId, localConnectionId, localStream);

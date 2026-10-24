@@ -16,6 +16,8 @@ interface MenuItemsProps {
   canMemberRemove: boolean
   canLockMeeting: boolean
   meetingLocked: boolean
+  canReduceNoise: boolean
+  noiseReduced: boolean
   chatUnread: number
   screenShareVisibility: boolean
   handleInviteMemberClick: () => void
@@ -28,6 +30,7 @@ interface MenuItemsProps {
   handleWhiteboardClick: () => void
   handleMemberRemoveClick: () => void
   handleLockClick: () => void
+  handleNoiseClick: () => void
 }
 
 type Items = Record<MenuPosition, MenuItemProps[]>
@@ -59,6 +62,12 @@ export default class MenuItems extends Component<MenuItemsProps> {
 					active: this.props.meetingLocked,
 					visibility: this.props.canLockMeeting,
 					handleClick: this.props.handleLockClick
+				},
+				{
+					name: 'noise',
+					active: this.props.noiseReduced,
+					visibility: this.props.canReduceNoise,
+					handleClick: this.props.handleNoiseClick
 				}
 			],
 			bottom: [

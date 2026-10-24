@@ -86,3 +86,24 @@ describe('the lock button', () => {
     expect(show({ name: 'lock', visibility: false }).container.firstChild).toBeNull();
   });
 });
+
+describe('the noise reduction button', () => {
+  it('says what a click does: turn the cleaning off while it is on, on while it is off', () => {
+    show({ name: 'noise', active: true });
+    expect(screen.getByLabelText('Turn noise reduction off')).toBeTruthy();
+    show({ name: 'noise', active: false });
+    expect(screen.getByLabelText('Turn noise reduction on')).toBeTruthy();
+  });
+
+  it('is highlighted while the cleaning is on and shown at full strength while it is off, with the same icon', () => {
+    const on = show({ name: 'noise', active: true }).container;
+    const off = show({ name: 'noise', active: false }).container;
+    expect(iconOf(on)).toBe(iconOf(off));
+    expect(on.querySelector('ion-icon')?.className).toMatch(/active/);
+    expect(off.querySelector('ion-icon')?.className).toMatch(/off/);
+  });
+
+  it('is not drawn where the browser cannot do it', () => {
+    expect(show({ name: 'noise', visibility: false }).container.firstChild).toBeNull();
+  });
+});

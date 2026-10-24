@@ -18,9 +18,11 @@ export interface CspOptions {
  */
 export function buildCsp({ customScheme, isDev }: CspOptions): string {
   const own = `${customScheme}://*`;
+  // 'wasm-unsafe-eval' lets WebAssembly run (the noise reduction of the microphone is RNNoise compiled to it) and
+  // nothing else: eval() and new Function() stay forbidden
   const defaultSrc = isDev
-    ? `default-src ${own} 'unsafe-inline' devtools://* 'unsafe-eval' data:`
-    : `default-src ${own} 'unsafe-inline' data:`;
+    ? `default-src ${own} 'unsafe-inline' devtools://* 'unsafe-eval' 'wasm-unsafe-eval' data:`
+    : `default-src ${own} 'unsafe-inline' 'wasm-unsafe-eval' data:`;
   const connectSrc = isDev
     ? `connect-src ${own} http: https: ws: wss:`
     : `connect-src ${own} https: wss:`;

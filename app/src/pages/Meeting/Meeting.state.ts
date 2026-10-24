@@ -40,6 +40,8 @@ export interface MeetingState {
   whiteboardEnabled: boolean;
   /** the host has locked the meeting: nobody new can join */
   locked: boolean;
+  /** the microphone is being cleaned of background noise (the person's choice, see NoiseSuppressionService) */
+  noiseSuppression: boolean;
   menuExpanded: MenuExpandedState;
 }
 
@@ -61,6 +63,7 @@ export interface MeetingActions {
   ) => AnyAction;
   replaceWhiteboardEnabled: (enabled: boolean) => AnyAction;
   replaceLocked: (locked: boolean) => AnyAction;
+  replaceNoiseSuppression: (on: boolean) => AnyAction;
   replaceVideoStreamMutedVideo: (
     connectionId: string,
     muted: boolean,
@@ -93,6 +96,7 @@ const meeting: MeetingState = {
   whiteboardDrawings: [],
   whiteboardEnabled: false,
   locked: false,
+  noiseSuppression: true,
   menuExpanded: ['top', 'bottom'],
 };
 
@@ -136,6 +140,9 @@ export const actions: MeetingActions = {
   },
   replaceLocked(locked) {
     return { type: 'REPLACE_MEETING_LOCKED', locked };
+  },
+  replaceNoiseSuppression(on) {
+    return { type: 'REPLACE_MEETING_NOISE_SUPPRESSION', on };
   },
   replaceVideoStreamMutedVideo(connectionId, muted) {
     const payload = { connectionId, muted };
@@ -232,6 +239,10 @@ export function reducers(state = meeting, action: any) {
     }
     case 'REPLACE_MEETING_LOCKED': {
       meeting.locked = action.locked;
+      return cloneDeep(meeting);
+    }
+    case 'REPLACE_MEETING_NOISE_SUPPRESSION': {
+      meeting.noiseSuppression = action.on;
       return cloneDeep(meeting);
     }
     case 'REPLACE_MEETING_VIDEO_STREAM_MUTED_VIDEO': {

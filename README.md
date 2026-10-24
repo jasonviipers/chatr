@@ -35,6 +35,12 @@ Meetings are voice first. Everybody who has no camera on is an avatar with a lab
 
 The buttons show their state: a slashed microphone or camera means it is off. Tap to switch.
 
+**Noise reduction** is on by default: the microphone is cleaned of fans, keyboards and street noise on your own
+device before it is sent (RNNoise, loaded only when you join a meeting; nothing leaves your device for it). A
+sparkles button in the menu switches it off and on, even in the middle of a call, and the choice is remembered on the
+device. Browsers that cannot run it keep their own basic suppression. How it is built and measured:
+[docs/voice-cancellation.md](docs/voice-cancellation.md).
+
 The host also has a padlock. **Lock meeting** keeps anybody new out (they are told the meeting is locked, and the
 servers refuse them even if they bypass the app) while the people already in keep talking; unlocking lets newcomers in
 again. The lock lives in the server's memory only, for as long as the meeting runs.

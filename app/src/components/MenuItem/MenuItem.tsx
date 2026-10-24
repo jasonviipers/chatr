@@ -14,6 +14,7 @@ import {
 	chatbubbleEllipsesOutline,
 	lockClosedOutline,
 	lockOpenOutline,
+	sparklesOutline,
 } from 'ionicons/icons';
 import styles from './MenuItem.module.scss';
 
@@ -30,6 +31,7 @@ export type MenuItemName =
   | 'memberRemove'
   | 'chat'
   | 'lock'
+  | 'noise'
 
 export interface MenuItemProps {
   name: MenuItemName;
@@ -53,6 +55,8 @@ export const switches: Partial<Record<MenuItemName, Switch>> = {
 	video: { on: videocamOutline, off: videocamOffOutline, labelOn: 'Turn camera off', labelOff: 'Turn camera on' },
 	// on = the meeting is locked: the button then unlocks it
 	lock: { on: lockClosedOutline, off: lockOpenOutline, labelOn: 'Unlock meeting', labelOff: 'Lock meeting' },
+	// on = background noise is being removed from the microphone: the button then turns that off
+	noise: { on: sparklesOutline, off: sparklesOutline, labelOn: 'Turn noise reduction off', labelOff: 'Turn noise reduction on' },
 };
 
 const labels: Record<MenuItemName, string> = {
@@ -66,6 +70,7 @@ const labels: Record<MenuItemName, string> = {
 	memberRemove: 'Remove member',
 	chat: 'Chat',
 	lock: 'Lock meeting',
+	noise: 'Noise reduction',
 };
 
 export default class MenuItem extends Component<MenuItemProps> {
@@ -80,6 +85,7 @@ export default class MenuItem extends Component<MenuItemProps> {
 		memberRemove: personRemoveOutline,
 		chat: chatbubbleEllipsesOutline,
 		lock: lockOpenOutline,
+		noise: sparklesOutline,
 	};
 
 	get switch() {

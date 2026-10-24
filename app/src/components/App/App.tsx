@@ -5,6 +5,7 @@ import routes from '../../routes'
 import SocketService from '../../services/SocketService'
 import IceService from '../../services/IceService'
 import DisplayNameService from '../../services/DisplayNameService'
+import NoiseSuppressionService from '../../services/NoiseSuppressionService'
 import AlertService from '../../services/AlertService'
 import LocalStorage from './App.storage'
 import Provider from '../Provider/Provider'
@@ -32,6 +33,7 @@ export default class App extends Component {
     SocketService.connect()
     IceService.start()
     void DisplayNameService.load() // the name this person chose earlier on this device, ready for the next meeting
+    void NoiseSuppressionService.load() // and whether they switched noise reduction off
   }
 
   setupConfig () {

@@ -1,8 +1,53 @@
 # Voice cancellation (noise suppression): architecture
 
-Status: **proposal, not built.** The goal is that someone in a noisy place (fan, keyboard, street, a family
+Status: **phase 1 is built** (RNNoise in an AudioWorklet, on by default, with a button; see "What was built" below).
+Phases 2 to 4 are still proposals. The goal is that someone in a noisy place (fan, keyboard, street, a family
 at home) can keep their microphone on and be understood, with the noise removed on their own device before
 it is sent. The text chat covers the case where they do not want to speak at all.
+
+## What was built (phase 1)
+
+- `app/src/services/audio/AudioPipeline.ts`: the graph below (source, RNNoise, two gains for a crossfade, destination).
+  Switching it on or off moves the gains, so nothing is renegotiated, and the engine is disconnected while it is not
+  heard. It answers `null` where it cannot run (no AudioWorklet, a context that cannot start without a click, a context
+  that is not 48 kHz, an engine that does not load within 6 s), and the caller then uses a plain microphone.
+- `app/src/services/audio/RnnoiseEngine.ts`: loads `@sapphi-red/web-noise-suppressor` 0.4.1 (MIT, pinned) lazily; the
+  worklet and the two wasm files are the app's own static files.
+- `app/src/services/NoiseSuppressionService.ts`: the person's choice (on unless they switched it off, kept in the
+  device's storage), the running pipelines, and `release(track)`, which `StreamTrackService.stop` calls because stopping
+  the output track does not stop the microphone behind it.
+- `MediaService` opens the microphone **without** the browser's noise suppression when ours will take over, and with it
+  otherwise (our cleaning switched off or unavailable, or the graph could not be built: then the microphone is opened
+  again the old way). Echo cancellation and gain control are always on.
+- A sparkles button in the top menu (hidden where the browser cannot do it). Switched off at the start of a meeting, no
+  graph is built at all (exactly the old microphone); switched on from there, it starts with the next meeting and says so.
+- Electron: the packaged window's CSP allows `'wasm-unsafe-eval'` (WebAssembly only, no `eval`).
+
+Two things learnt on the way, both now covered by tests:
+
+1. A browser **cannot switch its own noise suppression on a running microphone** (`applyConstraints({ noiseSuppression })`
+   is accepted and ignored in Chrome and Edge), so the choice has to be made when the microphone is opened.
+2. The suppressor fills one channel only. Mixing its two-channel output down to one the usual way averages in the empty
+   channel and **halves the voice (-6 dB)**. The gain nodes after it are one channel, `discrete`.
+
+### Measured
+
+Edge, two real browsers with a WebRTC call between them. The fake microphone plays a 28 s recording: a synthesized
+voice over a fan with a 120 Hz hum and keyboard clicks, with 5 s of noise only before and after it. The receiving
+side samples `inbound-rtp` `totalAudioEnergy` every 250 ms; the *floor* is the 20th percentile (the noise between the
+words), the *speech* the 85th.
+
+| | floor | speech |
+| --- | --- | --- |
+| before: the browser's own suppression only | -42.3 dB | -10.8 dB |
+| now: RNNoise on | -64.1 dB (22 dB quieter) | -10.3 dB |
+| now, switched off during the call (raw voice) | -23.5 dB | -9.9 dB |
+| the same voice with no noise at all, off / on | | -10.0 dB / -9.9 dB (0.1 dB lost) |
+
+Switching it off and on during the call needed no new connection, and ending the meeting released the microphone.
+
+Not measured: real human voices and real rooms, Safari, Firefox, phones, the CPU cost on a weak device. The synthetic
+noise is steady and easy for RNNoise, so these numbers are a sanity check, not a promise.
 
 ## Why it has to run in the browser
 
@@ -121,7 +166,7 @@ Starting with the sapphi-red package lets us compare them on real recordings bef
 
 ## Decisions needed
 
-1. Default **on** or **off**? Recommendation: on once phase 1 passes the tests above, with the toggle always visible.
+1. Default **on** or **off**? Decided: on (phase 1 passed the tests above), with the button always visible.
 2. Is a heavier desktop-only model (phase 2) worth the extra download, or is RNNoise/GTCRN good enough?
 3. Should the call mute button keep working as it does today (it mutes the *sent* track), or do you want a separate
    "push to talk" mode built on the voice activity detector?

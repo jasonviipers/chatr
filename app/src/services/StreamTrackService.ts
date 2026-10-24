@@ -1,5 +1,6 @@
 import { first, forEach } from 'lodash';
 import MeetingRepository from '../repositories/MeetingRepository';
+import NoiseSuppressionService from './NoiseSuppressionService';
 
 export default class StreamTrackService {
   private meetingRepository: MeetingRepository;
@@ -10,7 +11,11 @@ export default class StreamTrackService {
 
   stop(stream: MediaStream) {
     const tracks = stream.getTracks();
-    forEach(tracks, (track) => track.stop());
+    forEach(tracks, (track) => {
+      track.stop();
+      // a cleaned microphone is a graph in front of the real one: stopping its output must stop the microphone too
+      NoiseSuppressionService.release(track);
+    });
   }
 
   get isVideoEnabled() {

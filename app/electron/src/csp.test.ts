@@ -32,8 +32,9 @@ describe('buildCsp', () => {
 
   it('keeps everything else as strict as before: no remote scripts, no eval outside development', () => {
     const production = buildCsp({ customScheme: scheme, isDev: false });
-    assert.match(production, /default-src capacitor-electron:\/\/\* 'unsafe-inline' data:/);
-    assert.doesNotMatch(production, /unsafe-eval|devtools:/);
+    assert.match(production, /default-src capacitor-electron:\/\/\* 'unsafe-inline' 'wasm-unsafe-eval' data:/);
+    // WebAssembly is allowed (noise reduction), eval and new Function are not
+    assert.doesNotMatch(production, /'unsafe-eval'|devtools:/);
     assert.doesNotMatch(production, /script-src/);
 
     const development = buildCsp({ customScheme: scheme, isDev: true });

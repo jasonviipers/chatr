@@ -21,6 +21,8 @@ interface MenuProps {
   canMemberRemove: boolean;
   canLockMeeting: boolean;
   meetingLocked: boolean;
+  canReduceNoise: boolean;
+  noiseReduced: boolean;
   chatUnread: number;
   inviteText: string;
   isExpanded: boolean;
@@ -33,6 +35,7 @@ interface MenuProps {
   handleWhiteboardClick: () => void;
   handleMemberRemoveClick: () => void;
   handleLockClick: () => void;
+  handleNoiseClick: () => void;
   handleToggleChange: MenuToggleHandleChange;
 }
 
@@ -106,6 +109,8 @@ export default class Menu extends Component<MenuProps, MenuLocalState> {
 					canMemberRemove={this.props.canMemberRemove}
 					canLockMeeting={this.props.canLockMeeting}
 					meetingLocked={this.props.meetingLocked}
+					canReduceNoise={this.props.canReduceNoise}
+					noiseReduced={this.props.noiseReduced}
 					chatUnread={this.props.chatUnread}
 					screenShareVisibility={this.screenShareVisibility}
 					handleInviteMemberClick={this.handleInviteMemberClick}
@@ -118,6 +123,7 @@ export default class Menu extends Component<MenuProps, MenuLocalState> {
 					handleWhiteboardClick={this.props.handleWhiteboardClick}
 					handleMemberRemoveClick={this.props.handleMemberRemoveClick}
 					handleLockClick={this.props.handleLockClick}
+					handleNoiseClick={this.props.handleNoiseClick}
 				/>
 			)
 		);
