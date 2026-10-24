@@ -17,7 +17,10 @@ export default class EditorService {
   }
 
   private getContent() {
-    return EditorService.editor.root.innerHTML;
+    // Not root.innerHTML: Quill 2 writes bullet lists as <ol><li data-list="bullet">, which the server's HTML
+    // clean-up (it drops data-* attributes) would turn into a numbered list. The semantic HTML has real <ul>/<ol>,
+    // but it writes every space as &nbsp;, which makes a paragraph one unbreakable word: turn them back into spaces.
+    return EditorService.editor.getSemanticHTML().replace(/&nbsp;/g, ' ');
   }
 
   get toolbarOptions() {

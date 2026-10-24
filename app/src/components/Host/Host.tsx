@@ -4,7 +4,6 @@ import moment from 'moment';
 import { HostState } from '../../pages/Hosts/Hosts.state';
 import FloatButton from '../FloatButton/FloatButton';
 import styles from './Host.module.scss';
-import AlertService from '../../services/AlertService';
 
 interface HostProps {
   host: HostState
@@ -25,9 +24,7 @@ export default class Host extends Component<HostProps> {
 	}
 
 	handleDeleteClick () {
-		const isDemoAccount = (this.props.host.username === 'host');
-		if (isDemoAccount) AlertService.push('You can\'t delete demo host');
-		else this.props.handleDeleteClick(this.props.host.id);
+		this.props.handleDeleteClick(this.props.host.id);
 	}
 
 	render () {

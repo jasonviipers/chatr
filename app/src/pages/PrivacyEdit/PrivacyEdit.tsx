@@ -10,7 +10,6 @@ import Page from '../../components/Page/Page'
 import AdminMenu from '../../components/AdminMenu/AdminMenu'
 import Button from '../../components/Button/Button'
 import styles from './PrivacyEdit.module.scss'
-import AlertService from '../../services/AlertService'
 
 interface PrivacyEditProps extends
   PrivacyEditState, PrivacyEditActions, RouteComponentProps {}
@@ -42,7 +41,7 @@ class PrivacyEdit extends Component<PrivacyEditProps> {
   }
 
   handleSaveClick () {
-    return AlertService.push('You can\'t update demo privacy policy')
+    this.request.update(this.props.privacy)
   }
 
   componentDidMount () {
